@@ -30,10 +30,10 @@ class Message(BaseModel):
 #Classe referente ao assistant criado
 class Assistant(BaseModel):
     id: str
-    user_id: str
     name: str
     instructions: str
     model: str
+<<<<<<< HEAD
     tools: Optional[List[str]]
     tools_resources: Optional[dict]
     #threads vai receber a id de uma thread e colocado em uma lista para poder ser localizado mais facil
@@ -44,6 +44,12 @@ class Assistant(BaseModel):
 
 
 #Classe do usuario
+=======
+    temperature: float
+    max_tokens: int
+    top_p: float
+    
+>>>>>>> 58076934fff91dd2ed57e5fc81d1c431c6102523
 class User(BaseModel):
     id: str
     email: str
