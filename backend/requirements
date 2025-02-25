@@ -5,3 +5,5 @@ pymongo
 python-dotenv
 requests
 fastAPI
+uvicorn
+motor
