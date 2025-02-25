@@ -35,7 +35,7 @@ class Assistant(BaseModel):
 
 class User(BaseModel):
     id: str
-    email: str
-    token: str
+    email: EmailStr
+    refresh_token: Optional[str]
     created_at: datetime
-    assistants: List[str]
+    assistants: List[str] = []
