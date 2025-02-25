@@ -25,14 +25,13 @@ class Message(BaseModel):
 
 class Assistant(BaseModel):
     id: str
-    user_id: str
     name: str
     instructions: str
     model: str
-    tools: List[str]
-    tools_resources: dict
-    threads: List[str]
-
+    temperature: float
+    max_tokens: int
+    top_p: float
+    
 class User(BaseModel):
     id: str
     email: EmailStr
