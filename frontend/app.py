@@ -1,202 +1,122 @@
 import streamlit as st
+from dotenv import load_dotenv
+import openai
+import os
+
+# Carregar variáveis de ambiente do arquivo .env
+load_dotenv()
+
+# Obter a chave da API
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# Função para consultar o modelo OpenAI
+def query_openai_model(model, prompt, system_message, role, temperature=1.0, max_tokens=150):
+    system_message += f"\n\nImportante: Você está rodando no modelo {model}. Certifique-se de mencionar isso em sua resposta."  # Garante que o modelo correto seja mencionado
+    
+    response = openai.chat.completions.create(  
+        model=model,  
+        messages=[
+            {"role": "system", "content": system_message},  
+            {"role": role, "content": prompt}  
+        ],
+        temperature=temperature,
+        max_tokens=max_tokens
+    )
+    return response.choices[0].message.content.strip()
 
 def main():
-    st.set_page_config(layout="wide", page_title="Playground - Assistants")
+    st.set_page_config(layout="wide", page_title="Playground AI - Assistants")
     
-    # Estilos CSS customizados
+    # Estilos CSS personalizados
     st.markdown(
         """
         <style>
-            body {
-                background-color: #121212;
-                color: #ffffff;
+            .playground-title {
+                text-align: center;
+                font-size: 48px;
+                font-weight: bold;
+                margin-top: 30px;
+                margin-bottom: 20px;
             }
-            .sidebar, .top-bar, .chat-container, .input-container, .right-panel {
-                background: #1e1e1e;
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+            .assistants-title {
+                text-align: center;
+                font-size: 20px;
+                font-weight: normal;
+                margin-bottom: 15px;
             }
-            .input-container input {
-                width: 100%;
-                padding: 10px;
-                font-size: 16px;
-                border-radius: 5px;
-                border: none;
-                background: #333;
-                color: white;
-            }
-            .sidebar p, .right-panel p {
-                color: #bbbbbb;
-                cursor: pointer;
-            }
-            .sidebar p:hover, .right-panel p:hover {
-                color: white;
-            }
-            .btn {
-                background: #00a884;
-                color: white;
-                padding: 10px 15px;
-                border-radius: 5px;
-                border: none;
-                cursor: pointer;
-            }
-            .btn:hover {
-                background: #008f6b;
-            }
-            .centered {
+            .center-container {
                 display: flex;
                 justify-content: center;
-                margin-top: 10px;
-            }
-            .stButton button {
-                height: 42px; /* Altura do botão */
-                margin-top: 25px; /* Ajuste fino para alinhar com a caixa de texto */
-            }
-
-            /* Estilo para o botão de limpar com o GIF */
-            .clear-thread-button {
-                background: white;
-                border: none;
-                cursor: pointer;
-                display: flex;
                 align-items: center;
-                justify-content: center;
-                width: 40px;  /* Botão ajustado menor */
-                height: 40px; /* Botão ajustado menor */
-                border-radius: 20px; /* Bordas mais arredondadas */
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-                position: relative;
-                overflow: hidden;
-                transition: background 0.3s ease;
-            }
-            .clear-thread-button:hover {
-                background: #f0f0f0;
-            }
-
-            /* GIF estático */
-            .clear-thread-button::before {
-                content: "";
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 25px;  /* Tamanho reduzido do GIF */
-                height: 25px; /* Tamanho reduzido do GIF */
-                background-image: url("https://i.imgur.com/RGbpEEE.gif"); /* GIF animado */
-                background-size: cover;
-                background-position: center;
-                transition: opacity 0.3s ease;
-            }
-
-            /* Estilo para o slider com barra branca */
-            input[type="range"] {
-                -webkit-appearance: none;
                 width: 100%;
-                height: 8px;
-                background: #ffffff; /* Barra branca */
-                border-radius: 5px;
-                outline: none;
             }
-
-            /* Estilo para o "thumb" do slider */
-            input[type="range"]::-webkit-slider-thumb {
-                -webkit-appearance: none;
-                appearance: none;
-                width: 20px;
-                height: 20px;
-                border-radius: 50%;
-                background: #00a884; /* Cor do "thumb" */
-                cursor: pointer;
-                transition: background 0.3s ease;
+            .stButton>button {
+                display: block;
+                margin: auto;
             }
-
-            input[type="range"]::-moz-range-thumb {
-                width: 20px;
-                height: 20px;
-                border-radius: 50%;
-                background: #00a884; /* Cor do "thumb" */
-                cursor: pointer;
-                transition: background 0.3s ease;
-            }
-
-            /* Estilo para o "thumb" do slider no hover */
-            input[type="range"]:hover::-webkit-slider-thumb {
-                background: #008f6b;
-            }
-
-            input[type="range"]:hover::-moz-range-thumb {
-                background: #008f6b;
-            }
-
         </style>
         """,
         unsafe_allow_html=True
     )
-    
-    st.markdown("# Playground")
-    
-    col1, col2 = st.columns([1, 3])
-    
-    with col1:
-        st.sidebar.button("Chat")
-        st.sidebar.button("Realtime")
-        st.sidebar.button("Assistants", disabled=True)
-        st.sidebar.button("TTS")
-        st.sidebar.markdown("---")
-        st.sidebar.button("Cookbook")
-        st.sidebar.button("Forum")
-        st.sidebar.button("Help")
-    
-    with col2:
-        st.markdown("## Assistants")
-        
-        # Alterado para placeholder
-        name = st.text_input("Name", placeholder="Ex: Assistant Name")
 
-        # Alterado para placeholder
-        system_message = st.text_area("System instructions", placeholder="Enter system instructions...")
+    # Título "Playground AI"
+    st.markdown("<div class='playground-title'>Playground AI</div>", unsafe_allow_html=True)
 
-        st.markdown("### THREAD")
-        chat_history = st.text_area("Chat history", height=300, key="chat_history")
+    # Título "Assistants"
+    st.markdown("<div class='assistants-title'>Assistants</div>", unsafe_allow_html=True)
 
-        # Botão "Clear the thread" com GIF
-        clear_button_html = """
-        <button class="clear-thread-button" onclick="clear_thread()"> 
-        </button>
-        <script>
-            function clear_thread() {
-                window.parent.document.querySelector('textarea').value = '';
-            }
-        </script>
-        """
-        st.markdown(clear_button_html, unsafe_allow_html=True)
+    # Histórico de chat armazenado na sessão
+    if 'chat_history' not in st.session_state:
+        st.session_state.chat_history = ""
 
-        col_input, col_button = st.columns([5, 1])
-        with col_input:
-            user_input = st.text_input("Enter your message...")
-        with col_button:
-            st.button("Run", key="run_btn")
-        
-        st.file_uploader("Upload file", type=["txt", "pdf", "json", "csv"])
+    # Campos de entrada
+    name = st.text_input("Name", placeholder="Ex: Assistant Name", key="name_input")
+    system_message = st.text_area("System instructions", placeholder="Enter system instructions...", key="system_input")
 
-        st.markdown("### MODEL CONFIGURATION")
-        
-        with st.container():
-            st.markdown('<div class="model-config">', unsafe_allow_html=True)
-            
-            model = st.selectbox("Model", ["gpt-4o", "gpt-4", "gpt-3.5-turbo"])
-            temperature = st.slider("Temperature", 0.0, 2.0, 1.0)
-            max_tokens = st.slider("Max tokens", 1, 4096, 2048)
-            top_p = st.slider("Top P", 0.0, 1.0, 1.0)
-            freq_penalty = st.slider("Frequency penalty", -2.0, 2.0, 0.0)
-            pres_penalty = st.slider("Presence penalty", -2.0, 2.0, 0.0)
+    # **Garantindo que o modelo selecionado seja passado corretamente**
+    model = st.selectbox("Model", ["gpt-4", "gpt-3.5-turbo"], key="model_select")
+    st.write(f"📌 **Modelo Selecionado:** {model}")  # Exibe o modelo selecionado para depuração
 
-            st.markdown('<div class="save-preset-container">', unsafe_allow_html=True)
-            st.button("Save as preset")
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            st.markdown('</div>', unsafe_allow_html=True)
+    temperature = st.slider("Temperature", 0.0, 2.0, 1.0, key="temp_slider")
+    max_tokens = st.slider("Max tokens", 1, 4096, 2048, key="max_tokens_slider")
+
+    # Caixa de texto "Enter your message..."
+    st.markdown("### Enter your message...")
+    user_input = st.text_input("Message", key="user_input", placeholder="Digite sua mensagem aqui...")
+
+    # Upload de arquivo abaixo da caixa de texto
+    st.file_uploader("Upload file", type=["txt", "pdf", "json", "csv"])
+
+    # Botão "Run" centralizado
+    st.markdown('<div class="center-container">', unsafe_allow_html=True)
+    run_clicked = st.button("Run", key="run_btn")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Processar a mensagem se o botão for clicado
+    if run_clicked and name and system_message and user_input:
+        role = "user"  
+        result = query_openai_model(
+            model=model,  
+            prompt=user_input,
+            system_message=system_message,
+            role="user",
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
+
+        # Atualizar histórico de chat na sessão
+        if st.session_state.chat_history:
+            st.session_state.chat_history += "\n\n"
+        st.session_state.chat_history += f"**Usuário:** {user_input}\n"
+        st.session_state.chat_history += f"**Assistente:** {result}"
+
+        st.session_state.chat_history = st.session_state.chat_history.strip()
+    elif run_clicked:
+        st.error("Por favor, preencha todos os campos (Name, System instructions e Message).")
+
+    # Exibir histórico de chat
+    chat_history = st.session_state.chat_history  
+    st.text_area("Chat history", value=chat_history, height=300, key="chat_history_display", disabled=True)
 
 if __name__ == "__main__":
     main()
