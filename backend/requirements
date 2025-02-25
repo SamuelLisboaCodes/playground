@@ -1,0 +1,7 @@
+streamlit
+streamlit_oauth
+pydantic
+pymongo
+python-dotenv
+requests
+fastAPI
