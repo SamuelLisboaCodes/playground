@@ -6,13 +6,18 @@ from datetime import datetime
 from typing import List
 from dotenv import load_dotenv
 import time
+import os
+from dotenv import load_dotenv
 
 
-client = OpenAI(api_key='OPENAI_API_KEY')
+
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+client = OpenAI(api_key=OPENAI_API_KEY)
 router = APIRouter()
-
 #%%
-# 🔹 Criar uma nova thread
+#  Criar uma nova thread
 @router.post("/threads", response_model=Thread)
 async def create_thread(assistant_id: str):
     """Cria uma nova thread associada a um assistente"""
@@ -25,7 +30,9 @@ async def create_thread(assistant_id: str):
         runs=[]
     )
 
-# 🔹 Enviar mensagem para a thread
+
+
+#  Enviar mensagem para a thread
 @router.post("/threads/{thread_id}/messages", response_model=Message)
 async def send_message(thread_id: str, role: str, content: str):
     """Envia uma mensagem para uma thread"""
@@ -47,7 +54,7 @@ async def send_message(thread_id: str, role: str, content: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# 🔹 Rodar a thread (executar resposta do assistente)
+#  Rodar a thread (executar resposta do assistente)
 @router.post("/threads/{thread_id}/run", response_model=Message)
 async def run_thread(thread_id: str, assistant_id: str):
     """Executa uma thread e retorna a resposta do assistente"""
@@ -111,13 +118,13 @@ async def list_messages(thread_id: str):
                 thread_id='thread_PZbs924Euhlu2ocJ4IT1aZgr',
                 role=msg.role,
                 content=content_text,
-                timestamp=datetime.utcnow()
+                timestamp=datetime.fromtimestamp(msg.created_at)
             )
 
             formatted_messages.append(formatted_message)
 
 
-            return formatted_messages
+        return formatted_messages
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
