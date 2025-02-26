@@ -7,6 +7,7 @@ from config.repositories.assistant_repository import MongoAssistantRepository
 from config.repositories.message_repository import MongoMessageRepository
 from config.repositories.threads_repository import MongoThreadRepository
 from config.repositories.user_repository import MongoUserRepository
+from config.repositories.run_repository import MongoRunRepository
 
 load_dotenv()
 
@@ -17,7 +18,7 @@ mongo_db_client = AsyncIOMotorClient(mongodb_uri)["playground_DB"]
 users_collection = MongoUserRepository(mongo_db_client)
 assistants_collection = MongoAssistantRepository(mongo_db_client)
 threads_collection = MongoThreadRepository(mongo_db_client)
-message_collection = MongoMessageRepository(mongo_db_client)
-
+messages_collection = MongoMessageRepository(mongo_db_client)
+runs_collection = MongoRunRepository(mongo_db_client)
 
 

@@ -5,6 +5,7 @@ from fastapi.responses import RedirectResponse
 
 import requests
 from api.storage import users_collection
+from config.models import User
 load_dotenv()
 router = APIRouter()
 
@@ -24,16 +25,20 @@ async def login_com_google():
 @router.get("/callback")
 async def auth_callback(code: str, request: Request):
     # Trocar o código de autorização pelo token de acesso
+    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
     token_data = {
         "code": code,
-        "client_id": os.getenv("GOOGLE_CLIENT_ID"),
-        "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
-        "redirect_uri": os.getenv("GOOGLE_REDIRECT_URI"),
+        "client_id": GOOGLE_CLIENT_ID,
+        "client_secret": GOOGLE_CLIENT_SECRET,
+        "redirect_uri": "http://127.0.0.1:8501",
         "grant_type": "authorization_code",
     }
     response = requests.post(GOOGLE_TOKEN_URL, data=token_data)
     tokens = response.json()
+    print(tokens)
     access_token = tokens["access_token"] 
+    
     
     if not access_token:
         raise HTTPException(status_code=400, detail="Missing id_token in response.")
@@ -49,15 +54,11 @@ async def auth_callback(code: str, request: Request):
 
         
         await users_collection.update_user_token(user_info["id"], access_token)
+        user = await users_collection.get_user(user_info["id"])
         
         # Armazena o email do usuário na sessão
-        request.session["user_email"] = user_info["email"]
+        return {"email": user.email,"refresh_token": user.refresh_token}
         
-        # edireciona para o frontend com sessão ativa
-        response = RedirectResponse(url=f"http://localhost:8501/?email={user_info['email']}")
-        response.set_cookie(key="session", value=user_info["email"], httponly=True, secure=False)
-
-        return response
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Invalid id_token: {str(e)}")
@@ -68,12 +69,21 @@ async def auth_callback(code: str, request: Request):
 @router.get("/session-user")
 async def get_session_user(request: Request):
     """Retorna o email do usuário armazenado no Cookie de Sessão."""
-    print("session-user" + str(request.session))
-    user_email = request.cookies.get("session")
-    print(user_email)
-    if not user_email:
-        raise HTTPException(status_code=401, detail="Usuário não autenticado.")
-    return {"email": user_email}
+    try:
+        headers = {"Authorization": request.headers["Authorization"]}
+        print(headers)
+        user_info_url = "https://www.googleapis.com/oauth2/v2/userinfo"
+        result = requests.get(user_info_url, headers=headers)
+        user_info = result.json()
+        if not await users_collection.get_user(user_info["id"]):
+           created = await users_collection.create_user(user_info["id"], user_info["email"])
+        
+        await users_collection.update_user_token(user_info["id"], request.headers["Authorization"].split()[1])
+        print(user_info["email"])
+        return {"email": user_info["email"]}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid id_token: {str(e)}")
+    
 
 @router.get("/logout")
 async def logout(response: Response):

@@ -12,11 +12,11 @@ class MongoThreadRepository:
         try:
             document = await self.collection.insert_one({
                 "id": new_thread.id,
-                "assistant_id": new_thread.assistant_id,
                 "messages": new_thread.messages,
                 "runs": new_thread.runs
             })
-            return True if document.inserted_id else None
+
+            return await self.collection.get_thread(new_thread.id) if document.inserted_id else None
         except PyMongoError as e:
             print(f"Erro ao registrar thread: {e}")
             return None
@@ -29,14 +29,22 @@ class MongoThreadRepository:
         except PyMongoError as e:
             print(f"Erro ao obter thread: {e}")
             return None
-
+        
+    async def get_messages_by_thread(self, thread_id: str):
+        """Obtém uma thread pelo ID."""
+        try:
+            document = await self.collection.find_one({"id": thread_id})
+            return self.__to_thread_model(document).messages if document else None
+        except PyMongoError as e:
+            print(f"Erro ao obter thread: {e}")
+            return None
     async def update_thread(self, updated_thread: Thread):
         """Atualiza os dados de uma thread no banco de dados."""
         try:
             result = await self.collection.update_one(
                 {"id": updated_thread.id},
                 {"$set": {
-                    "assistant_id": updated_thread.assistant_id,
+                    "assistant_id": updated_thread.get("assistant_id"),
                     "messages": updated_thread.messages,
                     "runs": updated_thread.runs
                 }}
@@ -54,7 +62,17 @@ class MongoThreadRepository:
         except PyMongoError as e:
             print(f"Erro ao excluir thread: {e}")
             return None
-    
+    async def update_assistant_thread(self, thread_id: str, assistant_id: str):
+        try:
+            result = await self.collection.update_one({"id": thread_id},
+                    
+                                                  {"$set": {"assistant_id": assistant_id}})
+            return result
+                
+        except PyMongoError as e:
+            print(f"Erro ao adicionar assistant thread: {e}")
+            return None
+        
     async def update_thread_messsage(self, new_message_id: str, thread_id: str):
         try:
             result = await self.collection.update_one({"id": thread_id},
@@ -96,7 +114,6 @@ class MongoThreadRepository:
         """Converte um documento do MongoDB para um objeto Thread."""
         return Thread(
             id=obj["id"],
-            assistant_id=obj["assistant_id"],
             messages=obj.get("messages", []),
             runs=obj.get("runs", [])
         )

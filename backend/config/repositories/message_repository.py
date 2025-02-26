@@ -1,7 +1,7 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import PyMongoError
 from config.models import Message  # Importando a classe Message do arquivo models.py
-
+from datetime import datetime
 class MongoMessageRepository:
     def __init__(self, client: AsyncIOMotorClient):
         """Inicializa a conexão com a coleção 'messages' no banco 'playground_DB'."""
@@ -15,9 +15,9 @@ class MongoMessageRepository:
                 "thread_id": new_message.thread_id,
                 "role": new_message.role,
                 "content": new_message.content,
-                "timestamp": new_message.timestamp
+                "timestamp": datetime.now(datetime.timezone.utc)
             })
-            return True if document.inserted_id else None
+            return await self.collection.get_message(new_message.id) if document else None
         except PyMongoError as e:
             print(f"Erro ao registrar mensagem: {e}")
             return None
@@ -38,6 +38,7 @@ class MongoMessageRepository:
                 {"id": updated_message.id},
                 {"$set": {
                     "thread_id": updated_message.thread_id,
+                    "assistant_id": updated_message.get("assistant_id"),
                     "role": updated_message.role,
                     "content": updated_message.content,
                     "timestamp": updated_message.timestamp
@@ -80,6 +81,7 @@ class MongoMessageRepository:
         return Message(
             id=obj["id"],
             thread_id=obj["thread_id"],
+            assistant_id=obj.get("assistant_id"),
             role=obj["role"],
             content=obj["content"],
             timestamp=obj["timestamp"]

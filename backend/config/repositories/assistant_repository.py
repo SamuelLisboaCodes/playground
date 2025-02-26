@@ -21,7 +21,7 @@ class MongoAssistantRepository():
                                                         "temperature":new_assistant.temperature,
                                                        " max_tokens": max_tokens,
                                                         "top_p":new_assistant.top_p})
-            return True if document else None
+            return await self.collection.get_assistant(new_assistant.id) if document else None
         except PyMongoError as e:
             print(f"Erro ao registrar assistant: {e}")
              
@@ -58,16 +58,6 @@ class MongoAssistantRepository():
             print(f"Erro ao excluir assistant: {e}")
             return None
         
-    async def update_assistant_thread(self, new_thread_id: str, assistant_id: str):
-        try:
-            result = await self.collection.update_one({"id": assistant_id},
-                    
-                                                  {"$push": {"threads": new_thread_id}})
-            return result
-                
-        except PyMongoError as e:
-            print(f"Erro ao adicionar assistant thread: {e}")
-            return None
     
     async def delete_assistant_thread(self, thread_id: str, assistant_id: str):
         try:

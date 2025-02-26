@@ -1,7 +1,7 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import PyMongoError
 from config.models import Run  # Importando a classe Run do arquivo models.py
-
+from datetime import datetime
 class MongoRunRepository:
     def __init__(self, client: AsyncIOMotorClient):
         """Inicializa a conexão com a coleção 'runs' no banco 'playground_DB'."""
@@ -13,10 +13,11 @@ class MongoRunRepository:
             document = await self.collection.insert_one({
                 "id": new_run.id,
                 "thread_id": new_run.thread_id,
-                "status": new_run.status,
-                "created_at": new_run.created_at,
+                "assistant_id": new_run.assistant_id,
+                "status": new_run.get("status"),
+                "created_at": new_run.get("status"),
             })
-            return True if document.inserted_id else None
+            return await self.collection.get_run(new_run.id) if document.inserted_id else None
         except PyMongoError as e:
             print(f"Erro ao registrar run: {e}")
             return None
@@ -46,7 +47,21 @@ class MongoRunRepository:
         except PyMongoError as e:
             print(f"Erro ao atualizar run: {e}")
             return None
-
+    async def update_run_status(self, run_id: str, status_run: str):
+        """Atualiza os dados de um registro de execução no banco de dados."""
+        try:
+            result = await self.collection.update_one(
+            {"id": run_id},
+            {"$set": {
+                "status": status_run,
+                "completed_at": datetime.now(datetime.timezone.utc)
+                }}
+            )
+            return result.modified_count > 0  # Retorna True se houve atualização
+        except PyMongoError as e:
+            print(f"Erro ao atualizar run: {e}")
+            return None
+        
     async def delete_run(self, run_id: str):
         """Remove um registro de execução do banco de dados."""
         try:
@@ -61,6 +76,7 @@ class MongoRunRepository:
         return Run(
             id=obj["id"],
             thread_id=obj["thread_id"],
+            assistant_id=obj["assistant_id"],
             status=obj["status"],
             created_at=obj["created_at"],
             completed_at=obj.get("completed_at")

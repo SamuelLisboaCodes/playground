@@ -1,6 +1,6 @@
 from openai import OpenAI 
 from typing_extensions import override
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from config.models import  Assistant
 from api.storage import users_collection, assistants_collection
 client = OpenAI(api_key= 'OPENAI_API_KEY')
@@ -17,20 +17,13 @@ async def create_assistant(request: Assistant):
         temperature=request.temperature,
         top_p=request.top_p
     )
-    assistants_collection.create_assistant(Assistant, assistant.max_tokens)
-    users_collection.add_assistant_to_user("rodrigoquaglio@gmail.com", assistant.id)
-    return Assistant(
-        id=assistant.id,
-        name=assistant.name,
-        instructions=assistant.instructions,
-        model=assistant.model,
-        temperature=assistant.temperature,
-        max_tokens=request.max_tokens,
-        top_p=assistant.top_p
-    )
+    new_assistant = await assistants_collection.create_assistant(assistant)
+    await users_collection.add_assistant_to_user("rodrigoquaglio@gmail.com", assistant.id)
+    return new_assistant
 
 @router.get("/assistants")
-async def list_assistants():
+async def list_assistants(request: Request):
     """Lista todos os assistentes criados"""
-    assistants = client.beta.assistants.list()
-    return [{"id": a.id, "name": a.name, "model": a.model} for a in assistants.data]
+    #assistants = client.beta.assistants.list()
+    assistants = users_collection.get_user_assistants(user_mail)
+    return [{"id": a.id, "name": a.name, "model": a.model} for a in assistants]
