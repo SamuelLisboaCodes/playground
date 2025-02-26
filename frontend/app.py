@@ -43,10 +43,8 @@ def query_openai_model_with_context(model, prompt, system_message, role, extract
     
     response = openai.chat.completions.create(
         model=model,
-        messages=[
-            {"role": "system", "content": system_message},
-            {"role": role, "content": prompt}
-        ],
+        messages=[{"role": "system", "content": system_message},
+                  {"role": role, "content": prompt}],
         temperature=temperature,
         max_tokens=max_tokens,
         top_p=top_p
@@ -83,10 +81,31 @@ def main():
                 display: block;
                 margin: auto;
             }
+            .logout-button {
+                position: fixed;
+                top: 70px;  /* Ajustando para o botão não ficar sobre outros elementos */
+                right: 20px;
+                background-color: red;  /* Cor de fundo vermelha */
+                color: white;  /* Texto branco */
+                border: 1px solid #ccc;
+                padding: 10px 20px;
+                font-size: 16px;
+                cursor: pointer;
+                border-radius: 5px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                font-weight: 500;
+            }
+            .logout-button:hover {
+                background-color: darkred;  /* Efeito de hover com cor vermelha mais escura */
+                transform: scale(1.05);  /* Efeito de aumento ao passar o mouse */
+            }
         </style>
         """,
         unsafe_allow_html=True
     )
+
+    # Botão de "Logout" no canto superior direito
+    st.markdown("<button class='logout-button'>Logout</button>", unsafe_allow_html=True)
 
     # Título "Playground AI"
     st.markdown("<div class='playground-title'>Playground AI</div>", unsafe_allow_html=True)
