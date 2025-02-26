@@ -1,10 +1,9 @@
 from openai import OpenAI 
 from typing_extensions import override
 from fastapi import APIRouter
-from backend.config.models import  Assistant
-
-
-client = OpenAI(api_key= OPENAI_API_KEY)
+from config.models import  Assistant
+from api.storage import users_collection, assistants_collection
+client = OpenAI(api_key= 'OPENAI_API_KEY')
 
 router = APIRouter()
 
@@ -18,6 +17,8 @@ async def create_assistant(request: Assistant):
         temperature=request.temperature,
         top_p=request.top_p
     )
+    assistants_collection.create_assistant(Assistant, assistant.max_tokens)
+    users_collection.add_assistant_to_user("rodrigoquaglio@gmail.com", assistant.id)
     return Assistant(
         id=assistant.id,
         name=assistant.name,

@@ -33,9 +33,8 @@ class Assistant(BaseModel):
     name: str
     instructions: str
     model: str
-<<<<<<< HEAD
-    tools: Optional[List[str]]
-    tools_resources: Optional[dict]
+    tools: List[str] = []
+    tools_resources: dict = []
     #threads vai receber a id de uma thread e colocado em uma lista para poder ser localizado mais facil
     threads: List[str] = []
     temperature: float
@@ -44,15 +43,8 @@ class Assistant(BaseModel):
 
 
 #Classe do usuario
-=======
-    temperature: float
-    max_tokens: int
-    top_p: float
-    
->>>>>>> 58076934fff91dd2ed57e5fc81d1c431c6102523
 class User(BaseModel):
     id: str
     email: str
     refresh_token: Optional[str]
-    created_at: datetime
     assistants: List[str] = []

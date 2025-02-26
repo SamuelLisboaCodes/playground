@@ -1,14 +1,14 @@
 #%%
 from fastapi import APIRouter, HTTPException
 from openai import OpenAI
-from backend.config.models import Thread, Message, Run
+from config.models import Thread, Message, Run
 from datetime import datetime
 from typing import List
 from dotenv import load_dotenv
 import time
 
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+client = OpenAI(api_key='OPENAI_API_KEY')
 router = APIRouter()
 
 #%%

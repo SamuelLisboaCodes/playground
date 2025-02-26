@@ -7,3 +7,7 @@ requests
 fastAPI
 uvicorn
 motor
+asyncio 
+pytest_asyncio
+google.oauth2
+itsdangerous

@@ -140,7 +140,7 @@ st.markdown(f"""
             <p>Não tem uma conta? <a href='#' style='color:#008060;'>Cadastrar</a></p>
             <div class='separator'>ou</div>
             <div class='google-login'>
-                <a href="https://accounts.google.com/o/oauth2/auth?response_type=code&client_id={GOOGLE_CLIENT_ID}&redirect_uri=http://localhost:8501&scope=openid%20email%20profile" 
+                <a href="http://127.0.0.1:8000/auth/login" 
                 target="_blank">
                     <button>
                         <img src="https://auth.openai.com/assets/google-logo-NePEveMl.svg" alt="Google Logo">
