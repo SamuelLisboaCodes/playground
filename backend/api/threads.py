@@ -8,10 +8,17 @@ from dotenv import load_dotenv
 import time
 import os
 from dotenv import load_dotenv
+<<<<<<< HEAD
 from api.storage import threads_collection, users_collection,runs_collection, assistants_collection,messages_collection
 
 
 
+=======
+
+
+
+
+>>>>>>> bb4a5f23d2aa4aa24c7af81da6df0ceb6bd2693e
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -27,6 +34,18 @@ async def create_thread(user_email: str):
     
     return new_thread
 
+<<<<<<< HEAD
+=======
+    return Thread(
+        id=thread.id,
+        assistant_id=assistant_id,
+        messages=[],
+        runs=[]
+    )
+
+
+
+>>>>>>> bb4a5f23d2aa4aa24c7af81da6df0ceb6bd2693e
 #  Enviar mensagem para a thread
 @router.post("/threads/{thread_id}/messages", response_model=Message)
 async def send_message(thread_id: str, role: str, content: str):
@@ -130,5 +149,12 @@ async def list_messages(thread_id: str):
         return formatted_messages
         '''
 
+<<<<<<< HEAD
+=======
+        return formatted_messages
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+>>>>>>> bb4a5f23d2aa4aa24c7af81da6df0ceb6bd2693e
 
 #%%
