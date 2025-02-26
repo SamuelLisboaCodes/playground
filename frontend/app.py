@@ -1,26 +1,73 @@
 import streamlit as st
-from dotenv import load_dotenv
 import openai
+import re
+import json
+import pandas as pd
+import pdfplumber
+from dotenv import load_dotenv
 import os
 
-# Carregar variáveis de ambiente do arquivo .env
+# Carregar variáveis de ambiente do arquivo .env (se necessário)
 load_dotenv()
 
-# Obter a chave da API
+# Obter a chave da API do OpenAI (certifique-se de definir no .env ou diretamente)
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Função para consultar o modelo OpenAI
-def query_openai_model(model, prompt, system_message, role, temperature=1.0, max_tokens=150):
-    system_message += f"\n\nImportante: Você está rodando no modelo {model}. Certifique-se de mencionar isso em sua resposta."  # Garante que o modelo correto seja mencionado
+# Função para extrair números do texto
+def extract_numbers_from_text(text):
+    # Usar expressões regulares para capturar todos os números
+    return re.findall(r'\d+', text)
+
+# Função para analisar texto e buscar palavras ou outros padrões
+def analyze_text(text):
+    # Exemplo simples: retornar todas as palavras
+    words = re.findall(r'\w+', text.lower())  # Convertendo para minúsculas para normalizar
+    return words
+
+# Função para processar CSV
+def process_csv(uploaded_file):
+    df = pd.read_csv(uploaded_file)
+    return df
+
+# Função para processar JSON
+def process_json(uploaded_file):
+    data = json.loads(uploaded_file.getvalue().decode("utf-8"))
+    return data
+
+# Função para processar conteúdo de arquivos
+def process_uploaded_file(uploaded_file):
+    file_type = uploaded_file.type
     
+    if file_type == "text/plain":
+        return uploaded_file.getvalue().decode("utf-8")
+    elif file_type == "application/json":
+        return process_json(uploaded_file)
+    elif file_type == "text/csv":
+        return process_csv(uploaded_file)
+    elif file_type == "application/pdf":
+        with pdfplumber.open(uploaded_file) as pdf:
+            text = ""
+            for page in pdf.pages:
+                text += page.extract_text()
+        return text
+    else:
+        return "Formato de arquivo não suportado."
+
+# Função para realizar uma consulta geral
+def query_openai_model_with_context(model, prompt, system_message, role, extracted_data, temperature=1.0, max_tokens=150):
+    system_message += f"\n\nImportante: Você está rodando no modelo {model}. Certifique-se de mencionar isso em sua resposta."
+
+    # Adicionar os dados extraídos do arquivo no contexto
+    prompt = f"{prompt}\n\nConteúdo extraído do arquivo: {extracted_data}\n\nPor favor, analise o conteúdo e forneça a resposta com base no que foi extraído."
+
     response = openai.chat.completions.create(  
         model=model,  
-        messages=[
+        messages=[  
             {"role": "system", "content": system_message},  
             {"role": role, "content": prompt}  
-        ],
-        temperature=temperature,
-        max_tokens=max_tokens
+        ],  
+        temperature=temperature,  
+        max_tokens=max_tokens  
     )
     return response.choices[0].message.content.strip()
 
@@ -69,10 +116,8 @@ def main():
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = ""
 
-    # Novo campo para escolher o assistente
-    assistant = st.selectbox("Assistente", ["Escolha o Assistente", "Assistente 1", "Assistente 2", "Assistente 3"], key="assistant_select")
-
     # Campos de entrada
+    assistant_name = st.selectbox("Assistente", ["Assistente 1", "Assistente 2", "Assistente 3"], key="assist_select")
     name = st.text_input("Name", placeholder="Ex: Assistant Name", key="name_input")
     system_message = st.text_area("System instructions", placeholder="Enter system instructions...", key="system_input")
 
@@ -87,36 +132,36 @@ def main():
     user_input = st.text_input("Message", key="user_input", placeholder="Digite sua mensagem aqui...")
 
     # Upload de arquivo abaixo da caixa de texto
-    st.file_uploader("Upload file", type=["txt", "pdf", "json", "csv"])
+    uploaded_file = st.file_uploader("Upload file", type=["txt", "pdf", "json", "csv"])
 
-    # Botão "Run" centralizado
-    st.markdown('<div class="center-container">', unsafe_allow_html=True)
-    run_clicked = st.button("Run", key="run_btn")
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Processar o arquivo quando for carregado
+    if uploaded_file:
+        extracted_data = process_uploaded_file(uploaded_file)
+        st.text_area("Conteúdo do arquivo", value=str(extracted_data), height=300, key="file_content_display", disabled=True)
 
-    # Processar a mensagem se o botão for clicado
-    if run_clicked and name and system_message and user_input and assistant != "Escolha o Assistente":
-        role = "user"  
-        result = query_openai_model(
-            model=model,  
-            prompt=user_input,
-            system_message=system_message,
-            role="user",
-            temperature=temperature,
-            max_tokens=max_tokens
-        )
+        # Quando o botão "Run" for clicado
+        run_clicked = st.button("Run", key="run_btn")
+        if run_clicked and name and system_message and user_input:
+            role = "user"
 
-        # Atualizar histórico de chat na sessão
-        if st.session_state.chat_history:
-            st.session_state.chat_history += "\n\n"
-        st.session_state.chat_history += f"**Assistente Selecionado:** {assistant}\n"
-        st.session_state.chat_history += f"**Nome do Assistente:** {name}\n"
-        st.session_state.chat_history += f"**Usuário:** {user_input}\n"
-        st.session_state.chat_history += f"**Resposta do Assistente:** {result}"
+            # Chamar o modelo GPT com os dados extraídos do arquivo
+            result = query_openai_model_with_context(
+                model=model,  
+                prompt=user_input,
+                system_message=system_message,
+                role=role,
+                extracted_data=extracted_data,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
 
-        st.session_state.chat_history = st.session_state.chat_history.strip()
-    elif run_clicked:
-        st.error("Por favor, preencha todos os campos (Name, System instructions, Message e Assistente).")
+            # Atualizar histórico de chat na sessão
+            if st.session_state.chat_history:
+                st.session_state.chat_history += "\n\n"
+            st.session_state.chat_history += f"Você: {user_input}\n"
+            st.session_state.chat_history += f"Assistente ({assistant_name}): {result}"
+
+            st.session_state.chat_history = st.session_state.chat_history.strip()
 
     # Exibir histórico de chat
     chat_history = st.session_state.chat_history  
