@@ -69,13 +69,15 @@ def main():
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = ""
 
+    # Novo campo para escolher o assistente
+    assistant = st.selectbox("Assistente", ["Escolha o Assistente", "Assistente 1", "Assistente 2", "Assistente 3"], key="assistant_select")
+
     # Campos de entrada
     name = st.text_input("Name", placeholder="Ex: Assistant Name", key="name_input")
     system_message = st.text_area("System instructions", placeholder="Enter system instructions...", key="system_input")
 
     # **Garantindo que o modelo selecionado seja passado corretamente**
     model = st.selectbox("Model", ["gpt-4", "gpt-3.5-turbo"], key="model_select")
-    st.write(f"📌 **Modelo Selecionado:** {model}")  # Exibe o modelo selecionado para depuração
 
     temperature = st.slider("Temperature", 0.0, 2.0, 1.0, key="temp_slider")
     max_tokens = st.slider("Max tokens", 1, 4096, 2048, key="max_tokens_slider")
@@ -93,7 +95,7 @@ def main():
     st.markdown('</div>', unsafe_allow_html=True)
 
     # Processar a mensagem se o botão for clicado
-    if run_clicked and name and system_message and user_input:
+    if run_clicked and name and system_message and user_input and assistant != "Escolha o Assistente":
         role = "user"  
         result = query_openai_model(
             model=model,  
@@ -107,12 +109,14 @@ def main():
         # Atualizar histórico de chat na sessão
         if st.session_state.chat_history:
             st.session_state.chat_history += "\n\n"
+        st.session_state.chat_history += f"**Assistente Selecionado:** {assistant}\n"
+        st.session_state.chat_history += f"**Nome do Assistente:** {name}\n"
         st.session_state.chat_history += f"**Usuário:** {user_input}\n"
-        st.session_state.chat_history += f"**Assistente:** {result}"
+        st.session_state.chat_history += f"**Resposta do Assistente:** {result}"
 
         st.session_state.chat_history = st.session_state.chat_history.strip()
     elif run_clicked:
-        st.error("Por favor, preencha todos os campos (Name, System instructions e Message).")
+        st.error("Por favor, preencha todos os campos (Name, System instructions, Message e Assistente).")
 
     # Exibir histórico de chat
     chat_history = st.session_state.chat_history  

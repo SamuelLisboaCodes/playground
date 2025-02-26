@@ -11,17 +11,17 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Função para consultar o modelo OpenAI com base na entrada do usuário
 def query_openai_model(model, system_message, user_message, role, temperature=1.0, max_tokens=150):
-    messages = [{"role": "system", "content": system_message}] if role == "system" else []
-    messages.append({"role": role, "content": user_message})
+    prompt = system_message + "\n" + user_message
     
-    response = openai.chat.completions.create(  # Usando a nova API para modelos de chat
+    # Usando a API de completions tradicional (versão 0.28.0)
+    response = openai.Completion.create(  # Usando a versão antiga da API
         model=model,
-        messages=messages,
+        prompt=prompt,
         temperature=temperature,
         max_tokens=max_tokens
     )
     
-    return response.choices[0].message.content.strip()
+    return response.choices[0].text.strip()
 
 def main():
     st.set_page_config(layout="wide", page_title="Playground - Assistants")
