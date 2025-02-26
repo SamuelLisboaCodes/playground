@@ -54,7 +54,7 @@ def process_uploaded_file(uploaded_file):
         return "Formato de arquivo não suportado."
 
 # Função para realizar uma consulta geral
-def query_openai_model_with_context(model, prompt, system_message, role, extracted_data, temperature=1.0, max_tokens=150):
+def query_openai_model_with_context(model, prompt, system_message, role, extracted_data, temperature=1.0, max_tokens=150, top_p=1.0):
     system_message += f"\n\nImportante: Você está rodando no modelo {model}. Certifique-se de mencionar isso em sua resposta."
 
     # Adicionar os dados extraídos do arquivo no contexto
@@ -67,7 +67,8 @@ def query_openai_model_with_context(model, prompt, system_message, role, extract
             {"role": role, "content": prompt}  
         ],  
         temperature=temperature,  
-        max_tokens=max_tokens  
+        max_tokens=max_tokens,  
+        top_p=top_p  # Adicionando o parâmetro top_p
     )
     return response.choices[0].message.content.strip()
 
@@ -126,6 +127,7 @@ def main():
 
     temperature = st.slider("Temperature", 0.0, 2.0, 1.0, key="temp_slider")
     max_tokens = st.slider("Max tokens", 1, 4096, 2048, key="max_tokens_slider")
+    top_p = st.slider("Top P", 0.0, 1.0, 1.0, key="top_p_slider")  # Adicionando o slider para top_p
 
     # Caixa de texto "Enter your message..."
     st.markdown("### Enter your message...")
@@ -152,7 +154,8 @@ def main():
                 role=role,
                 extracted_data=extracted_data,
                 temperature=temperature,
-                max_tokens=max_tokens
+                max_tokens=max_tokens,
+                top_p=top_p  # Passando o valor de top_p
             )
 
             # Atualizar histórico de chat na sessão
