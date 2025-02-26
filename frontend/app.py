@@ -1,4 +1,3 @@
-
 import streamlit as st
 import openai
 import re
@@ -44,8 +43,10 @@ def query_openai_model_with_context(model, prompt, system_message, role, extract
     
     response = openai.chat.completions.create(
         model=model,
-        messages=[{"role": "system", "content": system_message},
-                  {"role": role, "content": prompt}],
+        messages=[
+            {"role": "system", "content": system_message},
+            {"role": role, "content": prompt}
+        ],
         temperature=temperature,
         max_tokens=max_tokens,
         top_p=top_p
@@ -53,41 +54,11 @@ def query_openai_model_with_context(model, prompt, system_message, role, extract
     return response.choices[0].message.content.strip()
 
 def main():
-
+    st.set_page_config(layout="wide", page_title="Playground AI - Assistants")
     
-
-    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-    GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-    REDIRECT_URI = "http://127.0.0.1:8501" 
-
-    # Captura o código OAuth do Google na URL
-    query_params = st.query_params
-    auth_code = query_params.get("code")
-
-
-    print(st.session_state)
-
-    if auth_code and not st.session_state["auth_token"]:
-        st.info("Trocando código OAuth pelo token do Google...")
-
-        response = requests.get(f"http://127.0.0.1:8000/auth/callback?code={auth_code}")
-
-        if response.status_code == 200:
-            token_data = response.json()
-            st.session_state["auth_token"] = token_data["refresh_token"]
-            st.session_state["email"] = token_data["email"]
-            st.success("Login realizado com sucesso!")
-            st.session_state["logged_in"] = True
-            
-            
-        else:
-            st.error("Falha ao obter o token do Google.")
-
-
-
-    # CSS página
+    # Estilos CSS personalizados
     st.markdown(
-        f"""
+        """
         <style>
             .playground-title {
                 text-align: center;
@@ -104,7 +75,6 @@ def main():
             }
             .center-container {
                 display: flex;
-                align-items: center;
                 justify-content: center;
                 align-items: center;
                 width: 100%;
@@ -113,54 +83,16 @@ def main():
                 display: block;
                 margin: auto;
             }
-            .logout-button {
-                position: fixed;
-                top: 70px;  /* Ajustando para o botão não ficar sobre outros elementos */
-                right: 20px;
-                background-color: red;  /* Cor de fundo vermelha */
-                color: white;  /* Texto branco */
-                border: 1px solid #ccc;
-                padding: 10px 20px;
-                font-size: 16px;
-                cursor: pointer;
-                border-radius: 5px;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-                font-weight: 500;
-            }
-            .logout-button:hover {
-                background-color: darkred;  /* Efeito de hover com cor vermelha mais escura */
-                transform: scale(1.05);  /* Efeito de aumento ao passar o mouse */
-            }
         </style>
         """,
         unsafe_allow_html=True
     )
 
-    # Botão de "Logout" no canto superior direito
-    st.markdown("<button class='logout-button'>Logout</button>", unsafe_allow_html=True)
-
     # Título "Playground AI"
     st.markdown("<div class='playground-title'>Playground AI</div>", unsafe_allow_html=True)
 
-
-    if not st.session_state["auth_token"]:
-        st.markdown(f"""
-            <div class='login-container'>
-                <div class='login-box'>
-                    <h2>Que bom que você voltou</h2>
-                    <div class='separator'>ou</div>
-                    <div class='google-login'>
-                        <a href="https://accounts.google.com/o/oauth2/auth?response_type=code&client_id={GOOGLE_CLIENT_ID}&redirect_uri={REDIRECT_URI}&scope=openid%20email%20profile" 
-                        target="_self">
-                            <button>
-                                <img src="https://auth.openai.com/assets/google-logo-NePEveMl.svg" alt="Google Logo">
-                                Log in with Google
-                            </button>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+    # Título "Assistants"
+    st.markdown("<div class='assistants-title'>Assistants</div>", unsafe_allow_html=True)
 
     # Histórico de chat armazenado na sessão
     if 'chat_history' not in st.session_state:
@@ -242,7 +174,6 @@ def main():
     # Exibir histórico de chat
     chat_history = st.session_state.chat_history  
     st.text_area("Chat history", value=chat_history, height=300, key="chat_history_display", disabled=True)
->>>>>>> 984cd1d (Adicionei a opção de selecionar Assistente)
 
 if __name__ == "__main__":
     main()
