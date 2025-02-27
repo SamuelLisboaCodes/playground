@@ -115,7 +115,7 @@ def main():
                 color: white;
 =======
                 position: fixed;
-                top: 80px;  /* Ajustei a posição para 80px */
+                top: 60px;  /* Posição ajustada */
                 right: 20px;  /* Posição à direita */
                 background-color: red;  /* Cor de fundo vermelha */
                 color: white;  /* Texto branco */
