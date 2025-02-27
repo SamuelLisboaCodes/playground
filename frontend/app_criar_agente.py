@@ -159,7 +159,6 @@ def main():
         # Alterado para placeholder
         system_message = st.text_area("System instructions", placeholder="Enter system instructions...")
         
-        st.file_uploader("Upload file", type=["txt", "pdf", "json", "csv"])
 
         st.markdown("### MODEL CONFIGURATION")
         

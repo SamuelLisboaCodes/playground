@@ -7,9 +7,6 @@ from typing import List
 from dotenv import load_dotenv
 import time
 import os
-from dotenv import load_dotenv
-
-
 
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -60,7 +57,7 @@ async def run_thread(thread_id: str, assistant_id: str):
     """Executa uma thread e retorna a resposta do assistente"""
 
     try:
-        # 🔹 Criar a execução da thread
+        #  Criar a execução da thread
         run = client.beta.threads.runs.create(
             thread_id=thread_id,
             assistant_id=assistant_id
@@ -68,7 +65,7 @@ async def run_thread(thread_id: str, assistant_id: str):
 
         run_id = run.id
 
-        # 🔄 Aguardar até a execução ser concluída
+        # Aguardar até a execução ser concluída
         for _ in range(15):  # Tempo máximo de espera (~30s)
             run_status = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run_id)
 
@@ -79,12 +76,12 @@ async def run_thread(thread_id: str, assistant_id: str):
 
             time.sleep(2)  # Espera 2 segundos antes de checar novamente
 
-        # 🔹 Buscar a resposta do assistente
+        #  Buscar a resposta do assistente
         messages = client.beta.threads.messages.list(thread_id=thread_id)
 
         for msg in messages.data:  # Pegar a última resposta do assistente
             if msg.role == "assistant":
-                # 🔹 Extrair corretamente os blocos de texto
+                #  Extrair corretamente os blocos de texto
                 content_text = " ".join(
                                 block.text.value for block in msg.content)
                 return Message(
@@ -129,4 +126,3 @@ async def list_messages(thread_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-#%%
