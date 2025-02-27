@@ -1,15 +1,35 @@
 import streamlit as st
 import os
+import requests
 from dotenv import load_dotenv
-from streamlit.components.v1 import html
 
-# variáveis do .env
-load_dotenv()
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-
-
+REDIRECT_URI = "http://127.0.0.1:8501" 
 st.set_page_config(page_title="Login", page_icon="🔑", layout="wide")
+if "auth_token" or "email" not in st.session_state:
+    st.session_state["auth_token"] = None
+    st.session_state["email"] = None
+
+# Captura o código OAuth do Google na URL
+query_params = st.query_params
+auth_code = query_params.get("code")
+
+if auth_code and not st.session_state["auth_token"]:
+    st.info("Trocando código OAuth pelo token do Google...")
+
+    response = requests.get(f"http://127.0.0.1:8000/auth/callback?code={auth_code}")
+
+    if response.status_code == 200:
+        token_data = response.json()
+        st.session_state["auth_token"] = token_data["refresh_token"]
+        st.session_state["email"] = token_data["email"]
+        st.success("Login realizado com sucesso!")
+        
+    else:
+        st.error("Falha ao obter o token do Google.")
+
+
 
 # CSS página
 st.markdown(
@@ -62,26 +82,6 @@ st.markdown(
             font-size: 24px;
             margin-bottom: 20px;
         }}
-        .login-box input {{
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 1px solid #444;
-            border-radius: 5px;
-            background: #222;
-            color: #fff;
-        }}
-        .login-box button {{
-            width: 100%;
-            padding: 12px;
-            background: #008060;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
-        }}
         .separator {{
             display: flex;
             align-items: center;
@@ -122,7 +122,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# header
+# Header
 st.markdown("""
     <div class='header'>
         <img src='https://img.icons8.com/pulsar-line/512/FFFFFF/chatgpt.png' alt='Logo'>
@@ -130,24 +130,27 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# login
-st.markdown(f"""
-    <div class='login-container'>
-        <div class='login-box'>
-            <h2>Que bom que você voltou</h2>
-            <input type='text' placeholder='Endereço de e-mail*'>
-            <button>Continuar</button>
-            <p>Não tem uma conta? <a href='#' style='color:#008060;'>Cadastrar</a></p>
-            <div class='separator'>ou</div>
-            <div class='google-login'>
-                <a href="http://127.0.0.1:8000/auth/login" 
-                target="_blank">
-                    <button>
-                        <img src="https://auth.openai.com/assets/google-logo-NePEveMl.svg" alt="Google Logo">
-                        Log in with Google
-                    </button>
-                </a>
+
+if not st.session_state["auth_token"]:
+    st.markdown(f"""
+        <div class='login-container'>
+            <div class='login-box'>
+                <h2>Que bom que você voltou</h2>
+                <div class='separator'>ou</div>
+                <div class='google-login'>
+                    <a href="https://accounts.google.com/o/oauth2/auth?response_type=code&client_id={GOOGLE_CLIENT_ID}&redirect_uri={REDIRECT_URI}&scope=openid%20email%20profile" 
+                    target="_self">
+                        <button>
+                            <img src="https://auth.openai.com/assets/google-logo-NePEveMl.svg" alt="Google Logo">
+                            Log in with Google
+                        </button>
+                    </a>
+                </div>
             </div>
         </div>
-    </div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+
+# Se autenticado, exibir mensagem e token
+else:
+    st.success("Login bem-sucedido!")
+    st.write("Token JWT do Google:", st.session_state["email"])

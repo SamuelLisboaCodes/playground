@@ -6,6 +6,7 @@ from datetime import datetime
 class Run(BaseModel):
     id: str
     thread_id: str
+    assistant_id: str
     status: str
     created_at: datetime
     completed_at: Optional[datetime] = None
@@ -13,7 +14,6 @@ class Run(BaseModel):
 #classe referente a uma thread de cada assistant no playground
 class Thread(BaseModel):
     id: str
-    assistant_id: str
     #messages vai receber a id de cada mensagem e colocado em uma lista para poder ser localizado mais facil
     messages: List[str] = []
     #messages vai receber a id de cada run e colocado em uma lista para poder ser localizado mais facil
@@ -23,6 +23,7 @@ class Thread(BaseModel):
 class Message(BaseModel):
     id: str
     thread_id: str
+    assistant_id: Optional[str]
     role: str  
     content: str
     timestamp: datetime
@@ -33,12 +34,9 @@ class Assistant(BaseModel):
     name: str
     instructions: str
     model: str
-    tools: List[str] = []
-    tools_resources: dict = []
-    #threads vai receber a id de uma thread e colocado em uma lista para poder ser localizado mais facil
-    threads: List[str] = []
+    tools: Optional[List[str]] = []
+    tools_resources: Optional[List[dict]] = []
     temperature: float
-    max_tokens: int
     top_p: float
 
 
@@ -48,3 +46,4 @@ class User(BaseModel):
     email: str
     refresh_token: Optional[str]
     assistants: List[str] = []
+    threads: List[str] = []

@@ -17,6 +17,7 @@ router = APIRouter()
 @router.post("/assistants", response_model=Assistant)
 async def create_assistant(request: Assistant):
     """Cria um novo assistente na API da OpenAI"""
+    print(request)
     assistant = client.beta.assistants.create(
         name=request.name,
         instructions=request.instructions,
@@ -37,7 +38,7 @@ async def create_assistant(request: Assistant):
     )
 
 @router.get("/assistants")
-async def list_assistants():
+async def list_assistants(email: str):
     """Lista todos os assistentes criados"""
     assistants = client.beta.assistants.list()
     return [{"id": a.id, "name": a.name, "model": a.model} for a in assistants.data]
