@@ -17,8 +17,6 @@ def handle_logout_click():
     if response.status_code == 200:
         save_user_state(logged_in=False, email='', auth_token=None)
         st.write("logout realizado com sucesso")
-#%%
-#%%
 def process_uploaded_file(uploaded_file):
     file_type = uploaded_file.type
     if file_type == "text/plain":
@@ -56,7 +54,7 @@ def create_assistant_page():
 
     name = st.text_input("Nome do Assistente")
     system_message = st.text_area("Instruções do Sistema")
-    model = st.selectbox("Escolha o Modelo", ["gpt-4", "gpt-3.5-turbo"])
+    model = st.selectbox("Escolha o Modelo", ["gpt-4o","gpt-4o-mini","gpt-4.5-preview" ,"gpt-3.5-turbo"])
     max_tokens = st.slider("Max tokens", 1, 4096, 2048)
     temperature = st.slider("Temperature", 0.0, 2.0, 1.0)
     top_p = st.slider("Top P", 0.0, 1.0, 1.0)
@@ -65,7 +63,8 @@ def create_assistant_page():
         if not name:
             st.warning("O nome do assistente é obrigatório!")
         else:
-                payload = {"id": "0",
+                payload = {
+                           "id": "0",
                 "name": name,
                 "instructions": system_message,
                 "model": model,
@@ -74,7 +73,7 @@ def create_assistant_page():
                 "top_p": top_p
             }
 
-                response = requests.post(API_URL + 'assistants', json=payload)
+                response = requests.post(API_URL + 'assistants', json={"user_email": st.session_state["email"], "request": payload})
                 
                 if response.status_code == 200:
                     st.success("Assistente criado com sucesso!")
@@ -171,9 +170,6 @@ def openAI_page():
         # Título "Playground AI"
         st.markdown("<div class='playground-title'>Playground AI</div>", unsafe_allow_html=True)
 
-        # Título "Assistants"
-        st.markdown("<div class='assistants-title'>Assistants</div>", unsafe_allow_html=True)
-
         if "messages" not in st.session_state:
             st.session_state.messages = []  
 
@@ -194,11 +190,13 @@ def openAI_page():
             system_message = st.text_area("System instructions", assistant_attrs['instructions'], key="system_input")
 
             # **Garantindo que o modelo selecionado seja passado corretamente**
-            model = st.selectbox("Model", ["gpt-4", "gpt-3.5-turbo"], key=assistant_attrs['model'])
+            model = st.selectbox("Model", ["gpt-4o","gpt-4o-mini","gpt-4.5-preview" ,"gpt-3.5-turbo"], key=assistant_attrs['model'])
 
             temperature = st.slider("Temperature", 0.0, 2.0, assistant_attrs['temperature'], key='temperature')
             top_p = st.slider("Top P",  0.0,1.0, assistant_attrs['top_p'], key = 'top_p')
 
+            if st.button("Delete Assistant"): 
+                delete_assitant = requests.post(API_URL + f"assistants/{assistant_id}/delete")
 
         with col2:
             chat_container = st.container()
@@ -209,7 +207,8 @@ def openAI_page():
 
             if prompt := st.chat_input("Enter your message"):
             # Display user message in chat message container
-                st.chat_message("user").markdown(prompt)
+                with chat_container:
+                    st.chat_message("user").markdown(prompt)
                 st.session_state.messages.append({"role": "user", "content": prompt})
                 
                 if (system_message != assistant_attrs['instructions']) | (model != assistant_attrs['model'] )| (temperature != assistant_attrs['temperature']) | (top_p !=  assistant_attrs['top_p']):
@@ -225,11 +224,11 @@ def openAI_page():
                 chat_response = json.loads(response.text)
                 response = chat_response['content']
                 # Display assistant response in chat message container
-                with st.chat_message("assistant"):
-                    st.markdown(response)
+                with chat_container:
+                    st.chat_message(assistant_attrs['name']).markdown(response)
                 # Add assistant response to chat history
 
-                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.session_state.messages.append({"role": assistant_attrs['name'], "content": response})
 
     elif page == "Criar Assistente":
         create_assistant_page()
@@ -253,4 +252,3 @@ def openAI_page():
         #mandar_run = requests.post("http://127.0.0.1:8000/api/threads/thread_mHs4uDnlJ7XTBS96nZTyzO3i/asst_G8X32xNikCINLfqGhX6g1Gg4/run")
         
         st.write(listar_thread)
-# %%
