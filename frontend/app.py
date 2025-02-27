@@ -108,6 +108,7 @@ def main():
         <style>
             .logout-button {
 <<<<<<< HEAD
+<<<<<<< HEAD
                 position: absolute;
                 top: 5px;
                 right: 5px;
@@ -117,6 +118,11 @@ def main():
                 position: fixed;
                 top: 60px;  /* Posição ajustada */
                 right: 20px;  /* Posição à direita */
+=======
+                position: absolute;
+                top: 5px;  /* Posição mais para cima */
+                right: 5px;  /* Posição mais à direita */
+>>>>>>> 3ff6bbe (Correções básicas)
                 background-color: red;  /* Cor de fundo vermelha */
                 color: white;  /* Texto branco */
 >>>>>>> e8bc4cd (Botão logout e Sidebar (Tela inicial/Criar assistente))
@@ -132,8 +138,13 @@ def main():
                 z-index: 9999;
 =======
                 transition: transform 0.2s ease, background-color 0.2s ease; /* Adicionando transição para o hover */
+<<<<<<< HEAD
 >>>>>>> e8bc4cd (Botão logout e Sidebar (Tela inicial/Criar assistente))
+=======
+                z-index: 9999;  /* Garante que o botão fique acima de outros elementos */
+>>>>>>> 3ff6bbe (Correções básicas)
             }
+
             .logout-button:hover {
                 background-color: darkred;
                 transform: scale(1.05);
