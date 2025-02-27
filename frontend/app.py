@@ -1,28 +1,17 @@
 import streamlit as st
 from dotenv import load_dotenv
+import json
 import openai
 import os
+import requests
 
 # Carregar variáveis de ambiente do arquivo .env
 load_dotenv()
 
 # Obter a chave da API
-openai.api_key = os.getenv("OPENAI_API_KEY")
+API_URL = "http://127.0.0.1:8000/api/"  
+#%%
 
-# Função para consultar o modelo OpenAI
-def query_openai_model(model, prompt, system_message, role, temperature=1.0, max_tokens=150):
-    system_message += f"\n\nImportante: Você está rodando no modelo {model}. Certifique-se de mencionar isso em sua resposta."  # Garante que o modelo correto seja mencionado
-    
-    response = openai.chat.completions.create(  
-        model=model,  
-        messages=[
-            {"role": "system", "content": system_message},  
-            {"role": role, "content": prompt}  
-        ],
-        temperature=temperature,
-        max_tokens=max_tokens
-    )
-    return response.choices[0].message.content.strip()
 
 def main():
     st.set_page_config(layout="wide", page_title="Playground AI - Assistants")
@@ -58,65 +47,71 @@ def main():
         """,
         unsafe_allow_html=True
     )
-
+    thread_id = False
     # Título "Playground AI"
     st.markdown("<div class='playground-title'>Playground AI</div>", unsafe_allow_html=True)
 
     # Título "Assistants"
     st.markdown("<div class='assistants-title'>Assistants</div>", unsafe_allow_html=True)
 
-    # Histórico de chat armazenado na sessão
-    if 'chat_history' not in st.session_state:
-        st.session_state.chat_history = ""
+    col1, col2 = st.columns([2, 3])
+    
+    with col1:
+        st.markdown("### Configuração do Assistente")
+        response = requests.get(API_URL + 'assistants')
+        dict_assistentes = json.loads(response.text)
+        id_assistentes = [ass['id'] for ass in dict_assistentes]
+        id_to_name = lambda id_procurado: next((a["name"] for a in dict_assistentes if a["id"] == id_procurado),  "Não encontrado")
 
-    # Campos de entrada
-    name = st.text_input("Name", placeholder="Ex: Assistant Name", key="name_input")
-    system_message = st.text_area("System instructions", placeholder="Enter system instructions...", key="system_input")
+        assistant_id = st.selectbox("Assistente", id_assistentes, format_func = id_to_name, key="assistant_select")
 
-    # **Garantindo que o modelo selecionado seja passado corretamente**
-    model = st.selectbox("Model", ["gpt-4", "gpt-3.5-turbo"], key="model_select")
-    st.write(f"📌 **Modelo Selecionado:** {model}")  # Exibe o modelo selecionado para depuração
+        assistant = requests.get( API_URL + 'assistants/' + assistant_id + '/retrieve')
+        assistant_attrs = json.loads(assistant.text)
+    
+        system_message = st.text_area("System instructions", assistant_attrs['instructions'], key="system_input")
 
-    temperature = st.slider("Temperature", 0.0, 2.0, 1.0, key="temp_slider")
-    max_tokens = st.slider("Max tokens", 1, 4096, 2048, key="max_tokens_slider")
+        # **Garantindo que o modelo selecionado seja passado corretamente**
+        model = st.selectbox("Model", ["gpt-4", "gpt-3.5-turbo"], key=assistant_attrs['model'])
 
-    # Caixa de texto "Enter your message..."
-    st.markdown("### Enter your message...")
-    user_input = st.text_input("Message", key="user_input", placeholder="Digite sua mensagem aqui...")
+        temperature = st.slider("Temperature", 0.0, 2.0, assistant_attrs['temperature'], key='temperature')
+        top_p = st.slider("Top P",  0.0,1.0, assistant_attrs['top_p'], key = 'top_p')
 
-    # Upload de arquivo abaixo da caixa de texto
-    st.file_uploader("Upload file", type=["txt", "pdf", "json", "csv"])
 
-    # Botão "Run" centralizado
-    st.markdown('<div class="center-container">', unsafe_allow_html=True)
-    run_clicked = st.button("Run", key="run_btn")
-    st.markdown('</div>', unsafe_allow_html=True)
+    with col2:
+        chat_container = st.container()
+        with chat_container:
+            for message in st.session_state.messages:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
 
-    # Processar a mensagem se o botão for clicado
-    if run_clicked and name and system_message and user_input:
-        role = "user"  
-        result = query_openai_model(
-            model=model,  
-            prompt=user_input,
-            system_message=system_message,
-            role="user",
-            temperature=temperature,
-            max_tokens=max_tokens
-        )
+        if prompt := st.chat_input("Enter your message"):
+        # Display user message in chat message container
+            st.chat_message("user").markdown(prompt)
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            
+            if (system_message != assistant_attrs['instructions']) | (model != assistant_attrs['model'] )| (temperature != assistant_attrs['temperature']) | (top_p !=  assistant_attrs['top_p']):
+                response = requests.post(API_URL + f"assistants/{assistant_id}/update?instructions={system_message}&temperature={temperature}&top_p={top_p}&model={model}")
+            
+            if not thread_id: 
+                response = requests.post(API_URL + 'threads?assistant_id='+ assistant_id)
+                thread_id = json.loads(response.text)['id']
+        
+            response = requests.post(API_URL + f'threads/{thread_id}/messages?role=user&content={prompt}')
+            response = requests.post(API_URL + f'threads/{thread_id}/run?assistant_id={assistant_id}')
+            
+            chat_response = json.loads(response.text)
+            response = chat_response['content']
+            # Display assistant response in chat message container
+            with st.chat_message("assistant"):
+                st.markdown(response)
+            # Add assistant response to chat history
 
-        # Atualizar histórico de chat na sessão
-        if st.session_state.chat_history:
-            st.session_state.chat_history += "\n\n"
-        st.session_state.chat_history += f"**Usuário:** {user_input}\n"
-        st.session_state.chat_history += f"**Assistente:** {result}"
+            st.session_state.messages.append({"role": "assistant", "content": response})
 
-        st.session_state.chat_history = st.session_state.chat_history.strip()
-    elif run_clicked:
-        st.error("Por favor, preencha todos os campos (Name, System instructions e Message).")
+        # Upload de arquivo abaixo da caixa de texto
+        st.file_uploader("Upload file", type=["txt", "pdf", "json", "csv"])
 
-    # Exibir histórico de chat
-    chat_history = st.session_state.chat_history  
-    st.text_area("Chat history", value=chat_history, height=300, key="chat_history_display", disabled=True)
+
 
 if __name__ == "__main__":
     main()
