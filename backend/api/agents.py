@@ -69,3 +69,10 @@ async def update_assistant(assistant_id: str, instructions: str, temperature: fl
                                      temperature= temperature,
                                      top_p = top_p)
     return update_assistant
+
+@router.post("/assistants/{assistant_id}/delete")
+async def delete_assistant(assistant_id: str): 
+    delete_assistant = client.beta.assistants.delete(assistant_id=assistant_id)
+    await assistants_collection.delete_assistant(assistant_id=assistant_id)
+
+    return delete_assistant
