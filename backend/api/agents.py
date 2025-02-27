@@ -1,6 +1,6 @@
 from openai import OpenAI 
 from typing_extensions import override
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 from config.models import  Assistant
 import os
 
@@ -15,7 +15,7 @@ client = OpenAI(api_key= OPENAI_API_KEY)
 router = APIRouter()
 
 @router.post("/assistants", response_model=Assistant)
-async def create_assistant(request: Assistant, email: str =  Body(..., embed=True)):
+async def create_assistant(user_email: str = Body(..., embed=True), request: Assistant = Body(..., embed=True)):
     """Cria um novo assistente na API da OpenAI"""
     print(request)
     assistant = client.beta.assistants.create(
@@ -26,7 +26,7 @@ async def create_assistant(request: Assistant, email: str =  Body(..., embed=Tru
         top_p=request.top_p
     )
     await assistants_collection.create_assistant(assistant)
-    await users_collection.add_assistant_to_user(email, assistant.id)
+    await users_collection.add_assistant_to_user(user_email, assistant.id)
     return Assistant(
         id=assistant.id,
         name=assistant.name,
@@ -47,7 +47,7 @@ async def retrieve_assistant(assistant_id: str):
     """Lista os atributos de um assistente pelo ID"""
     try:
         # Se for uma requisição assíncrona, precisa de await
-        assistant_info =  client.beta.assistants.retrieve(assistant_id)
+        assistant_info =  client.beta.assistants.retrieve(  assistant_id)
 
         return Assistant(
             id=assistant_info.id,
@@ -55,7 +55,6 @@ async def retrieve_assistant(assistant_id: str):
             instructions=assistant_info.instructions,
             model=assistant_info.model,
             temperature=assistant_info.temperature,
-            max_tokens=0,
             top_p=assistant_info.top_p
         )
     except Exception as e:
@@ -70,3 +69,10 @@ async def update_assistant(assistant_id: str, instructions: str, temperature: fl
                                      temperature= temperature,
                                      top_p = top_p)
     return update_assistant
+
+@router.post("/assistants/{assistant_id}/delete")
+async def delete_assistant(assistant_id: str): 
+    delete_assistant = client.beta.assistants.delete(assistant_id=assistant_id)
+    await assistants_collection.delete_assistant(assistant_id=assistant_id)
+
+    return delete_assistant
