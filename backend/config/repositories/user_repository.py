@@ -31,10 +31,11 @@ class MongoUserRepository():
     async def get_user_assistants(self, user_email: str):
         try:
             document =  await self.collection.find_one({"email":user_email})
-            return self.__to_user_model(document).assistants if document else None
+            return document["assistants"] if document else None
        
         except PyMongoError as e:
             print(f"Erro ao get usuário: {e}") 
+
     async def add_thread_to_user(self, user_email: str, thread_id:str):
         try:
             result = await self.collection.update_one({"email": user_email},

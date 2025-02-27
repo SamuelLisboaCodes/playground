@@ -14,10 +14,10 @@ class MongoRunRepository:
                 "id": new_run.id,
                 "thread_id": new_run.thread_id,
                 "assistant_id": new_run.assistant_id,
-                "status": new_run.get("status"),
-                "created_at": new_run.get("status"),
+                "status": new_run.status,
+                "created_at": new_run.created_at,
             })
-            return await self.collection.get_run(new_run.id) if document.inserted_id else None
+            return await self.get_run(new_run.id) if document.inserted_id else None
         except PyMongoError as e:
             print(f"Erro ao registrar run: {e}")
             return None
@@ -54,7 +54,7 @@ class MongoRunRepository:
             {"id": run_id},
             {"$set": {
                 "status": status_run,
-                "completed_at": datetime.now(datetime.timezone.utc)
+                "completed_at": datetime.now()
                 }}
             )
             return result.modified_count > 0  # Retorna True se houve atualização

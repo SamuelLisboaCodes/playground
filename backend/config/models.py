@@ -34,10 +34,9 @@ class Assistant(BaseModel):
     name: str
     instructions: str
     model: str
-    tools: List[str] = []
-    tools_resources: dict = []
+    tools: Optional[List[str]] = []
+    tools_resources: Optional[List[dict]] = []
     temperature: float
-    max_tokens: int
     top_p: float
 
 

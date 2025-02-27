@@ -1,5 +1,5 @@
 #%%
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 from openai import OpenAI
 from config.models import Thread, Message, Run
 from datetime import datetime
@@ -19,17 +19,18 @@ router = APIRouter()
 #%%
 #  Criar uma nova thread
 @router.post("/threads", response_model=Thread)
-async def create_thread(user_email: str):
-    """Cria uma nova thread associada a um assistente"""
+async def create_thread(email: str = Body(..., embed=True)):
+    """Cria uma nova thread"""
+    print(email)
     thread = client.beta.threads.create()
     new_thread = await threads_collection.create_thread(thread)
-    await users_collection.add_thread_to_user(user_email,thread.id)
+    await users_collection.add_thread_to_user(email,thread.id)
     
     return new_thread
 
 #  Enviar mensagem para a thread
 @router.post("/threads/{thread_id}/messages", response_model=Message)
-async def send_message(thread_id: str, role: str, content: str):
+async def send_message(thread_id: str, role: str = Body(..., embed=True), content: str = Body(..., embed=True)):
     '''
         Message(
     id=message.id,
@@ -46,14 +47,16 @@ async def send_message(thread_id: str, role: str, content: str):
             role=role,  # "user" para usuário, "assistant" para assistente
             content=content
         )
-        new_message_obj = await messages_collection.create_message(message)
+        print(message)
+        new_message_obj = await messages_collection.create_message(message, content)
+        returns = await threads_collection.update_thread_message(message.id, thread_id)
         return new_message_obj
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 #  Rodar a thread (executar resposta do assistente)
-@router.post("/threads/{thread_id}/run", response_model=Message)
+@router.post("/threads/{thread_id}/{assistant_id}/run", response_model=Message)
 async def run_thread(thread_id: str, assistant_id: str):
     """Executa uma thread e retorna a resposta do assistente"""
     try:
@@ -66,7 +69,7 @@ async def run_thread(thread_id: str, assistant_id: str):
 
         # 🔄 Aguardar até a execução ser concluída
         for _ in range(15):  # Tempo máximo de espera (~30s)
-            run_status = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run_id)
+            run_status = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)
 
             if run_status.status == "completed":
                 break
@@ -74,7 +77,7 @@ async def run_thread(thread_id: str, assistant_id: str):
                 raise HTTPException(status_code=400, detail=f"Execução falhou: {run_status.status}")
 
             time.sleep(2)  # Espera 2 segundos antes de checar novamente
-        await runs_collection.update_run_status(run_status)
+        await runs_collection.update_run_status(run.id,run_status.status)
         # 🔹 Buscar a resposta do assistente
         messages = client.beta.threads.messages.list(thread_id=thread_id)
 
@@ -86,9 +89,10 @@ async def run_thread(thread_id: str, assistant_id: str):
                 new_message = Message(
                     id=msg.id,
                     thread_id=thread_id,
+                    assistant_id=assistant_id,
                     role=msg.role,
                     content=content_text.strip(),  # Agora é uma string válida
-                    timestamp=datetime.now(datetime.timezone.utc)
+                    timestamp=datetime.now()
                 )
                 await messages_collection.update_message(new_message)
                 return new_message

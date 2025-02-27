@@ -3,17 +3,13 @@ import streamlit as st
 import os
 import requests
 from dotenv import load_dotenv
-
+load_dotenv()
 if "auth_token" or "email" not in st.session_state:
     st.session_state["auth_token"] = None
     st.session_state["email"] = None
 def main():
 
     
-
-    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-    GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-    REDIRECT_URI = "http://localhost:8501" 
 
     # Captura o código OAuth do Google na URL
     query_params = st.query_params
@@ -38,7 +34,7 @@ def main():
         else:
             st.error("Falha ao obter o token do Google.")
 
-
+    
 
     # CSS página
     st.markdown(
@@ -147,7 +143,7 @@ def main():
                     <h2>Que bom que você voltou</h2>
                     <div class='separator'>ou</div>
                     <div class='google-login'>
-                        <a href="https://accounts.google.com/o/oauth2/auth?response_type=code&client_id={GOOGLE_CLIENT_ID}&redirect_uri={REDIRECT_URI}&scope=openid%20email%20profile" 
+                        <a href="https://accounts.google.com/o/oauth2/auth?client_id={os.getenv("GOOGLE_CLIENT_ID")}&redirect_uri={os.getenv("GOOGLE_REDIRECT_URI")}&response_type=code&scope=openid email profile" 
                         target="_self">
                             <button>
                                 <img src="https://auth.openai.com/assets/google-logo-NePEveMl.svg" alt="Google Logo">
@@ -161,7 +157,7 @@ def main():
 
     # Se autenticado, exibir mensagem e token
     else:
-        st.navigation([st.Page("pages/openAI.py")]).run()
+        st.navigation([st.Page("openAI.py")]).run()
 
         
 

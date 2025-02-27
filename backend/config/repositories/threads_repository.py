@@ -12,11 +12,11 @@ class MongoThreadRepository:
         try:
             document = await self.collection.insert_one({
                 "id": new_thread.id,
-                "messages": new_thread.messages,
-                "runs": new_thread.runs
+                "messages": [],
+                "runs": []
             })
 
-            return await self.collection.get_thread(new_thread.id) if document.inserted_id else None
+            return await self.get_thread(new_thread.id) if document.inserted_id else None
         except PyMongoError as e:
             print(f"Erro ao registrar thread: {e}")
             return None
@@ -73,11 +73,11 @@ class MongoThreadRepository:
             print(f"Erro ao adicionar assistant thread: {e}")
             return None
         
-    async def update_thread_messsage(self, new_message_id: str, thread_id: str):
+    async def update_thread_message(self, new_message_id: str, thread_id: str):
         try:
             result = await self.collection.update_one({"id": thread_id},
                     
-                                                  {"$push": {"threads": new_message_id}})
+                                                  {"$push": {"messages": new_message_id}})
             return result
                 
         except PyMongoError as e:

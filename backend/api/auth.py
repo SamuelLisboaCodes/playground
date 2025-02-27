@@ -25,12 +25,10 @@ async def login_com_google():
 @router.get("/callback")
 async def auth_callback(code: str, request: Request):
     # Trocar o código de autorização pelo token de acesso
-    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-    GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
     token_data = {
         "code": code,
-        "client_id": GOOGLE_CLIENT_ID,
-        "client_secret": GOOGLE_CLIENT_SECRET,
+        "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+        "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
         "redirect_uri": "http://127.0.0.1:8501",
         "grant_type": "authorization_code",
     }

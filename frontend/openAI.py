@@ -1,13 +1,23 @@
 import streamlit as st
 from dotenv import load_dotenv
-import openai
+from openai import OpenAI
+import requests
 import os
 
 # Carregar variáveis de ambiente do arquivo .env
 load_dotenv()
       
 # Obter a chave da API
+if "auth_token" or "email" not in st.session_state:
+    st.session_state["auth_token"] = None
+    st.session_state["email"] = None
+if "_auth_token" or "_email" not in st.session_state:
+    st.session_state["_auth_token"] = st.session_state["auth_token"]
+    st.session_state["_email"] = st.session_state["email"]
 
+if not st.session_state["email"] or not st.session_state["auth_token"]:
+    st.session_state["email"] = st.session_state["_email"]
+    st.session_state["auth_token"] = st.session_state["_auth_token"]
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -27,7 +37,6 @@ def query_openai_model(model, prompt, system_message, role, temperature=1.0, max
     return response.choices[0].message.content.strip()
 
 
-print(st.session_state)
 
 # Estilos CSS personalizados
 st.markdown(
@@ -66,7 +75,9 @@ st.markdown("<div class='playground-title'>Playground AI</div>", unsafe_allow_ht
 
 # Título "Assistants"
 st.markdown("<div class='assistants-title'>Assistants</div>", unsafe_allow_html=True)
-
+#
+#
+#st.write(todos_assistants.json())
 # Histórico de chat armazenado na sessão
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = ""
@@ -76,6 +87,7 @@ name = st.text_input("Name", placeholder="Ex: Assistant Name", key="name_input")
 system_message = st.text_area("System instructions", placeholder="Enter system instructions...", key="system_input")
 
 # **Garantindo que o modelo selecionado seja passado corretamente**
+
 model = st.selectbox("Model", ["gpt-4", "gpt-3.5-turbo"], key="model_select")
 st.write(f"📌 **Modelo Selecionado:** {model}")  # Exibe o modelo selecionado para depuração
 
@@ -120,3 +132,19 @@ elif run_clicked:
 chat_history = st.session_state.chat_history  
 st.text_area("Chat history", value=chat_history, height=300, key="chat_history_display", disabled=True)
 
+if st.button("aperte"):
+    print(st.session_state)
+    '''
+    response = requests.post("http://127.0.0.1:8000/api/assistants", json={
+    "id": "1",
+    "name": "sub-criador",
+    "instructions": "voce será o sub-criador de tudo",
+    "model": "gpt-4o",
+    "temperature": 1.0,
+    "top_p": 1.0})
+    '''
+    #criar_thread = requests.post("http://127.0.0.1:8000/api/threads",json={"email": "rodrigoquaglio@hotmail.com"})
+    #todos_assistants = requests.get("http://127.0.0.1:8000/api/assistants", {"email": st.session_state["email"]})
+    #criar_mensagem_na_thread = requests.post("http://127.0.0.1:8000/api/threads/thread_mHs4uDnlJ7XTBS96nZTyzO3i/messages",json={"role": "user", "content": "ola criador!"})
+    #mandar_run = requests.post("http://127.0.0.1:8000/api/threads/thread_mHs4uDnlJ7XTBS96nZTyzO3i/asst_G8X32xNikCINLfqGhX6g1Gg4/run")
+    st.write(response.json())

@@ -7,17 +7,17 @@ class MongoMessageRepository:
         """Inicializa a conexão com a coleção 'messages' no banco 'playground_DB'."""
         self.collection = client.messages
 
-    async def create_message(self, new_message: Message):
+    async def create_message(self, new_message: Message, content: str):
         """Cria uma nova mensagem no banco de dados."""
         try:
             document = await self.collection.insert_one({
                 "id": new_message.id,
                 "thread_id": new_message.thread_id,
                 "role": new_message.role,
-                "content": new_message.content,
-                "timestamp": datetime.now(datetime.timezone.utc)
+                "content": content,
+                "timestamp": datetime.now()
             })
-            return await self.collection.get_message(new_message.id) if document else None
+            return await self.get_message(new_message.id) if document else None
         except PyMongoError as e:
             print(f"Erro ao registrar mensagem: {e}")
             return None
@@ -38,7 +38,7 @@ class MongoMessageRepository:
                 {"id": updated_message.id},
                 {"$set": {
                     "thread_id": updated_message.thread_id,
-                    "assistant_id": updated_message.get("assistant_id"),
+                    "assistant_id": updated_message.assistant_id,
                     "role": updated_message.role,
                     "content": updated_message.content,
                     "timestamp": updated_message.timestamp

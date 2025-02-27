@@ -9,7 +9,7 @@ class MongoAssistantRepository():
     def __init__(self, client: AsyncIOMotorClient):
         self.collection = client.assistants
     
-    async def create_assistant(self, new_assistant: Assistant, max_tokens: int):
+    async def create_assistant(self, new_assistant: Assistant):
         try:
             document =  await self.collection.insert_one({"id":new_assistant.id,
                                                         "name":new_assistant.name,
@@ -17,11 +17,9 @@ class MongoAssistantRepository():
                                                         "model":new_assistant.model,
                                                         "tools": [],
                                                         "tools_resources":[],
-                                                        "threads": [],
                                                         "temperature":new_assistant.temperature,
-                                                       " max_tokens": max_tokens,
                                                         "top_p":new_assistant.top_p})
-            return await self.collection.get_assistant(new_assistant.id) if document else None
+            return await self.get_assistant(new_assistant.id) if document else None
         except PyMongoError as e:
             print(f"Erro ao registrar assistant: {e}")
              
@@ -29,7 +27,6 @@ class MongoAssistantRepository():
         try:
             document =  await self.collection.find_one({"id":assistant_id})
             return self.__to_assistant_model(document) if document else None
-       
         except PyMongoError as e:
             print(f"Erro ao pegar assistant: {e}") 
 
@@ -41,10 +38,8 @@ class MongoAssistantRepository():
                                                         "model":update_assistant.model,
                                                         "tools": update_assistant.tools,
                                                         "tools_resources": update_assistant.tools_resources,
-                                                        "threads": update_assistant.threads,
                                                         "temperature":update_assistant.temperature,
                                                         "threads": update_assistant.threads,
-                                                       " max_tokens": update_assistant.max_tokens,
                                                         "top_p":update_assistant.top_p}})
             return result
         except PyMongoError as e:
@@ -59,20 +54,7 @@ class MongoAssistantRepository():
             return None
         
     
-    async def delete_assistant_thread(self, thread_id: str, assistant_id: str):
-        try:
-            result = await self.thread_collection.update_one(
-                {"id": assistant_id},
-                {"$pull": {"threads": thread_id}}
-            )
-            if result.deleted_count > 0:
-                return result
-            return False
-        except PyMongoError as e:
-            print(f"Erro ao excluir thread no assistant: {e}")
-
-        return None
-    def __to_assistant_model(self, obj: dict[str,any]) -> Assistant:
+    def __to_assistant_model(self, obj: dict) -> Assistant:
         return Assistant(
             id=obj["id"],
             name=obj["name"],
@@ -80,8 +62,6 @@ class MongoAssistantRepository():
             model=obj["model"],
             tools=obj.get("tools",[]),
             tools_resources=obj.get("tools_resources",[]),
-            threads=obj["threads"],
             temperature=obj["temperature"],
-            max_tokens= obj["max_tokens"],
             top_p=obj["top_p"],
         )
