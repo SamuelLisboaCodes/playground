@@ -201,7 +201,7 @@ def openAI_page():
         "top_p": 1.0})
         '''
         #criar_thread = requests.post("http://127.0.0.1:8000/api/threads",json={"email": "rodrigoquaglio@hotmail.com"})
-        todos_assistants = requests.get("http://127.0.0.1:8000/api/assistants", {"email": st.session_state["email"]})
+        #todos_assistants = requests.get("http://127.0.0.1:8000/api/assistants", {"email": st.session_state["email"]})
         #criar_mensagem_na_thread = requests.post("http://127.0.0.1:8000/api/threads/thread_mHs4uDnlJ7XTBS96nZTyzO3i/messages",json={"role": "user", "content": "ola criador!"})
         #mandar_run = requests.post("http://127.0.0.1:8000/api/threads/thread_mHs4uDnlJ7XTBS96nZTyzO3i/asst_G8X32xNikCINLfqGhX6g1Gg4/run")
         

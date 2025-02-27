@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import main
 
 def login_page():
+    load_dotenv()
     main.initialize_session_state()
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
@@ -29,8 +30,6 @@ def login_page():
             st.rerun()
         else:
             st.error("Falha ao obter o token do Google.")
-
-
 
     # CSS página
     st.markdown(

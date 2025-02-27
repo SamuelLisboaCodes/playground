@@ -4,9 +4,9 @@ from fastapi.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 import os
-from backend.api import auth 
-from backend.api.agents import router as assistants_router
-from backend.api.threads import router as threads_router
+from api import auth 
+from api.agents import router as assistants_router
+from api.threads import router as threads_router
 from fastapi.openapi.utils import get_openapi
 
 def custom_openapi():
@@ -36,10 +36,6 @@ app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 @app.get("/")
 async def root():
     return {"message": "API FastAPI rodando"}
-@app.get('/user')
-async def user_info(request: Request):
-    print(request.cookies)
-    return {"message": "Usuário autenticado", "token": 'token'}
     
 app.include_router(assistants_router, prefix="/api")
 app.include_router(threads_router, prefix="/api")

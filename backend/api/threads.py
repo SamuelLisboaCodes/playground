@@ -7,12 +7,9 @@ from typing import List
 from dotenv import load_dotenv
 import time
 import os
-<<<<<<< HEAD
-=======
 from dotenv import load_dotenv
 from api.storage import threads_collection, users_collection,runs_collection, assistants_collection,messages_collection
 
->>>>>>> 7b82c79df137db3fea12431a210d238d206521b7
 
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -80,13 +77,8 @@ async def run_thread(thread_id: str, assistant_id: str):
                 raise HTTPException(status_code=400, detail=f"Execução falhou: {run_status.status}")
 
             time.sleep(2)  # Espera 2 segundos antes de checar novamente
-<<<<<<< HEAD
-
-        #  Buscar a resposta do assistente
-=======
         await runs_collection.update_run_status(run.id,run_status.status)
         # 🔹 Buscar a resposta do assistente
->>>>>>> 7b82c79df137db3fea12431a210d238d206521b7
         messages = client.beta.threads.messages.list(thread_id=thread_id)
 
         for msg in messages.data:  # Pegar a última resposta do assistente

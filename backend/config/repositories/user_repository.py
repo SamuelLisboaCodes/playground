@@ -93,4 +93,5 @@ class MongoUserRepository():
             email= obj["email"],
             refresh_token = obj["refresh_token"],
             assistants= obj["assistants"],
+            threads = obj["threads"]
         )

@@ -1,11 +1,11 @@
 from openai import OpenAI 
 from typing_extensions import override
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Body, HTTPException
 from config.models import  Assistant
 import os
 
 from dotenv import load_dotenv
-from backend.api.storage import users_collection, assistants_collection
+from api.storage import users_collection, assistants_collection
 
 
 load_dotenv()
@@ -15,7 +15,7 @@ client = OpenAI(api_key= OPENAI_API_KEY)
 router = APIRouter()
 
 @router.post("/assistants", response_model=Assistant)
-async def create_assistant(request: Assistant):
+async def create_assistant(request: Assistant, email: str =  Body(..., embed=True)):
     """Cria um novo assistente na API da OpenAI"""
     print(request)
     assistant = client.beta.assistants.create(
@@ -25,15 +25,14 @@ async def create_assistant(request: Assistant):
         temperature=request.temperature,
         top_p=request.top_p
     )
-    await assistants_collection.create_assistant(assistant, request.max_tokens)
-    await users_collection.add_assistant_to_user("rodrigoquaglio@gmail.com", assistant.id)
+    await assistants_collection.create_assistant(assistant)
+    await users_collection.add_assistant_to_user(email, assistant.id)
     return Assistant(
         id=assistant.id,
         name=assistant.name,
         instructions=assistant.instructions,
         model=assistant.model,
         temperature=assistant.temperature,
-        max_tokens=request.max_tokens,
         top_p=assistant.top_p
     )
 
