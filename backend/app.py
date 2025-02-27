@@ -9,8 +9,8 @@ from api import auth,agents,threads
 load_dotenv()
 app = FastAPI()
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
-app.include_router(agents.router, prefix="/api")
-app.include_router(threads.router, prefix="/api")
+app.include_router(agents.router, prefix="/api", tags=["agents"])
+app.include_router(threads.router, prefix="/api", tags=["threads"])
 
  
 @app.get("/")

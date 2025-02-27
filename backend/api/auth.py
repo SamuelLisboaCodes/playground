@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, Response, status
 from dotenv import load_dotenv
 import os
 from fastapi.responses import RedirectResponse
@@ -16,14 +16,8 @@ GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
 
 
 
-@router.get("/login")
-async def login_com_google():
-    google_auth_url = f"https://accounts.google.com/o/oauth2/auth?client_id={os.getenv("GOOGLE_CLIENT_ID")}&redirect_uri={os.getenv("GOOGLE_REDIRECT_URI")}&response_type=code&scope=openid email profile"
-    print(google_auth_url)
-    return RedirectResponse(url=google_auth_url)
-
 @router.get("/callback")
-async def auth_callback(code: str, request: Request):
+async def auth_callback(code: str):
     # Trocar o código de autorização pelo token de acesso
     token_data = {
         "code": code,
@@ -64,31 +58,16 @@ async def auth_callback(code: str, request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error {str(e)}")
 
-@router.get("/session-user")
-async def get_session_user(request: Request):
-    """Retorna o email do usuário armazenado no Cookie de Sessão."""
-    try:
-        headers = {"Authorization": request.headers["Authorization"]}
-        print(headers)
-        user_info_url = "https://www.googleapis.com/oauth2/v2/userinfo"
-        result = requests.get(user_info_url, headers=headers)
-        user_info = result.json()
-        if not await users_collection.get_user(user_info["id"]):
-           created = await users_collection.create_user(user_info["id"], user_info["email"])
-        
-        await users_collection.update_user_token(user_info["id"], request.headers["Authorization"].split()[1])
-        print(user_info["email"])
-        return {"email": user_info["email"]}
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid id_token: {str(e)}")
     
+@router.post("/logout")
+async def logout(email: str = Body(..., embed=True)):
+    print(email)
+    await users_collection.update_user_token(email, '')
+    return {"message": "Logout realizado com sucesso"}
 
-@router.get("/logout")
-async def logout(response: Response):
-    """Remove a sessão do usuário apagando o Cookie."""
-    response = RedirectResponse(url="http://localhost:8501")
-    response.delete_cookie("session_id")
-    return response
+
+#codigo abaixo existe mas não está funcional. 
+#Irei tentar implementar depois pq não é tão importante agora;
 
 @router.post("/refresh")
 async def refresh_token_endpoint(user_id: str):

@@ -44,9 +44,9 @@ class MongoUserRepository():
         except PyMongoError as e:
             print(f"Erro ao up usuário: {e}")
 
-    async def update_user_token(self, user_id: str, refresh_token:str):
+    async def update_user_token(self, user_email: str, refresh_token:str):
         try:
-            result = await self.collection.update_one({"id": user_id},
+            result = await self.collection.update_one({"email": user_email},
             {"$set": {"refresh_token": refresh_token}})
             return result
         except PyMongoError as e:
