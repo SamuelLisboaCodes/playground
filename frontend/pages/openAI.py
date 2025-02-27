@@ -197,9 +197,10 @@ def openAI_page():
 
             if st.button("Delete Assistant"): 
                 delete_assitant = requests.post(API_URL + f"assistants/{assistant_id}/delete")
+                st.rerun()
 
         with col2:
-            chat_container = st.container()
+            chat_container = st.container(height=400)
             with chat_container:
                 for message in st.session_state.messages:
                     with st.chat_message(message["role"]):
