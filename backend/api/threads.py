@@ -1,4 +1,3 @@
-#%%
 from fastapi import APIRouter, HTTPException, Body
 from openai import OpenAI
 from config.models import Thread, Message, Run
@@ -7,19 +6,14 @@ from typing import List
 from dotenv import load_dotenv
 import time
 import os
-<<<<<<< HEAD
-=======
-from dotenv import load_dotenv
 from api.storage import threads_collection, users_collection,runs_collection, assistants_collection,messages_collection
-
->>>>>>> 7b82c79df137db3fea12431a210d238d206521b7
 
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 router = APIRouter()
-#%%
+
 #  Criar uma nova thread
 @router.post("/threads", response_model=Thread)
 async def create_thread(email: str = Body(..., embed=True)):
@@ -34,35 +28,26 @@ async def create_thread(email: str = Body(..., embed=True)):
 #  Enviar mensagem para a thread
 @router.post("/threads/{thread_id}/messages", response_model=Message)
 async def send_message(thread_id: str, role: str = Body(..., embed=True), content: str = Body(..., embed=True)):
-    '''
-        Message(
-    id=message.id,
-    thread_id=thread_id,
-    role=role,
-    content=content,
-    timestamp=datetime.utcnow()
-    )
-    '''
-    """Envia uma mensagem para uma thread"""
-    try:
-        message = client.beta.threads.messages.create(
-            thread_id=thread_id,
-            role=role,  # "user" para usuário, "assistant" para assistente
-            content=content
-        )
-        print(message)
-        new_message_obj = await messages_collection.create_message(message, content)
-        returns = await threads_collection.update_thread_message(message.id, thread_id)
-        return new_message_obj
 
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    """Envia uma mensagem para uma thread"""
+
+    message = client.beta.threads.messages.create(
+    thread_id=thread_id,
+    role=role,  # "user" para usuário, "assistant" para assistente
+    content=content
+    )
+    print(message)
+    new_message_obj = await messages_collection.create_message(message, content)
+    returns = await threads_collection.update_thread_message(message.id, thread_id)
+    
+    return new_message_obj
+
 
 #  Rodar a thread (executar resposta do assistente)
 @router.post("/threads/{thread_id}/{assistant_id}/run", response_model=Message)
 async def run_thread(thread_id: str, assistant_id: str):
-    """Executa uma thread e retorna a resposta do assistente"""
-    try:
+        """Executa uma thread e retorna a resposta do assistente"""
+
         #  Criar a execução da thread
         run = client.beta.threads.runs.create(
             thread_id=thread_id,
@@ -80,13 +65,9 @@ async def run_thread(thread_id: str, assistant_id: str):
                 raise HTTPException(status_code=400, detail=f"Execução falhou: {run_status.status}")
 
             time.sleep(2)  # Espera 2 segundos antes de checar novamente
-<<<<<<< HEAD
 
         #  Buscar a resposta do assistente
-=======
         await runs_collection.update_run_status(run.id,run_status.status)
-        # 🔹 Buscar a resposta do assistente
->>>>>>> 7b82c79df137db3fea12431a210d238d206521b7
         messages = client.beta.threads.messages.list(thread_id=thread_id)
 
         for msg in messages.data:  # Pegar a última resposta do assistente
@@ -99,47 +80,39 @@ async def run_thread(thread_id: str, assistant_id: str):
                     thread_id=thread_id,
                     assistant_id=assistant_id,
                     role=msg.role,
-                    content=content_text.strip(),  # Agora é uma string válida
+                    content=content_text.strip(), 
                     timestamp=datetime.now()
                 )
                 await messages_collection.update_message(new_message)
                 return new_message
 
-        # Se não encontrou resposta, lançar erro
-        raise HTTPException(status_code=400, detail="Nenhuma resposta do assistente encontrada.")
-
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
 
 @router.get("/threads/{thread_id}/messages", response_model=List[Message])
 async def list_messages(thread_id: str):
     """Lista todas as mensagens de uma thread"""
-    try:
-        messages_list = await threads_collection.get_messages_by_thread(thread_id)
-        return messages_list
-    
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-        '''
-        messages = client.beta.threads.messages.list(thread_id=thread_id)
-        formatted_messages = []
-        for msg in messages.data:
-            content_text = " ".join(
-                block.text.value for block in msg.content)
 
-            formatted_message = Message(
-                id=msg.id,
-                thread_id='thread_PZbs924Euhlu2ocJ4IT1aZgr',
-                role=msg.role,
-                content=content_text,
-                timestamp=datetime.fromtimestamp(msg.created_at)
-            )
+    messages_list =  await threads_collection.get_messages_by_thread(thread_id)
+    return messages_list
 
-            formatted_messages.append(formatted_message)
+"""
+    messages = client.beta.threads.messages.list(thread_id=thread_id)
+    formatted_messages = []
+    for msg in messages.data:
+        content_text = " ".join(
+            block.text.value for block in msg.content)
+
+        formatted_message = Message(
+            id=msg.id,
+            thread_id='thread_PZbs924Euhlu2ocJ4IT1aZgr',
+            role=msg.role,
+            content=content_text,
+            timestamp=datetime.fromtimestamp(msg.created_at)
+        )
+
+        formatted_messages.append(formatted_message)
             
 
         return formatted_messages
-        '''
-
+    
+"""
 
