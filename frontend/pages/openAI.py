@@ -10,14 +10,15 @@ import pandas as pd
 import pdfplumber
 
 
+API_URL = "http://127.0.0.1:8000/api/"  
 
 def handle_logout_click():
     response = requests.post("http://127.0.0.1:8000/auth/logout", json={"email":st.session_state["email"]})
     if response.status_code == 200:
         save_user_state(logged_in=False, email='', auth_token=None)
         st.write("logout realizado com sucesso")
-
-
+#%%
+#%%
 def process_uploaded_file(uploaded_file):
     file_type = uploaded_file.type
     if file_type == "text/plain":
@@ -56,6 +57,7 @@ def create_assistant_page():
     name = st.text_input("Nome do Assistente")
     system_message = st.text_area("Instruções do Sistema")
     model = st.selectbox("Escolha o Modelo", ["gpt-4", "gpt-3.5-turbo"])
+    max_tokens = st.slider("Max tokens", 1, 4096, 2048)
     temperature = st.slider("Temperature", 0.0, 2.0, 1.0)
     top_p = st.slider("Top P", 0.0, 1.0, 1.0)
 
@@ -63,19 +65,23 @@ def create_assistant_page():
         if not name:
             st.warning("O nome do assistente é obrigatório!")
         else:
-            new_assistant = {
+                payload = {"id": "0",
                 "name": name,
-                "system_message": system_message,
+                "instructions": system_message,
                 "model": model,
                 "temperature": temperature,
+                "max_tokens": max_tokens,
                 "top_p": top_p
             }
 
-            if 'assistants' not in st.session_state:
-                st.session_state.assistants = []
-            
-            st.session_state.assistants.append(new_assistant)
-            st.success(f"Assistente '{name}' criado com sucesso!")
+                response = requests.post(API_URL + 'assistants', json=payload)
+                
+                if response.status_code == 200:
+                    st.success("Assistente criado com sucesso!")
+                    
+                else:
+                    st.error(f"Erro ao criar assistente: {response.text}")
+
 
 def openAI_page():
 # Carregar variáveis de ambiente do arquivo .env
@@ -131,65 +137,105 @@ def openAI_page():
     page = st.sidebar.radio("Navegar para", ["Tela Inicial", "Criar Assistente"])
 
     if page == "Tela Inicial":
-        st.markdown("<h1 style='text-align: center;'>Playground AI</h1>", unsafe_allow_html=True)
+        st.markdown(
+        """
+        <style>
+            .playground-title {
+                text-align: center;
+                font-size: 48px;
+                font-weight: bold;
+                margin-top: 30px;
+                margin-bottom: 20px;
+            }
+            .assistants-title {
+                text-align: center;
+                font-size: 20px;
+                font-weight: normal;
+                margin-bottom: 15px;
+            }
+            .center-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+            }
+            .stButton>button {
+                display: block;
+                margin: auto;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+        thread_id = False
+        # Título "Playground AI"
+        st.markdown("<div class='playground-title'>Playground AI</div>", unsafe_allow_html=True)
 
-        st.subheader("Assistentes")
+        # Título "Assistants"
+        st.markdown("<div class='assistants-title'>Assistants</div>", unsafe_allow_html=True)
 
-        # Lista de assistentes na sessão
-        if 'assistants' not in st.session_state:
-            st.session_state.assistants = []
+        if "messages" not in st.session_state:
+            st.session_state.messages = []  
 
-        # Selecionar assistente
-        assistant_names = ["Selecionar Assistente..."] + [assistant["name"] for assistant in st.session_state.assistants]
-        selected_assistant = st.selectbox("Selecionar Assistente", assistant_names)
+        col1, col2 = st.columns([2, 3])
 
-        # Exibir detalhes do assistente selecionado
-        selected_data = None
-        if selected_assistant != "Selecionar Assistente...":
-            selected_data = next((a for a in st.session_state.assistants if a["name"] == selected_assistant), None)
-            if selected_data:
-                st.write(f"**Modelo:** {selected_data['model']}")
-                st.write(f"**Temperature:** {selected_data['temperature']}")
-                st.write(f"**Top P:** {selected_data['top_p']}")
-                st.text_area("Instruções do Sistema", selected_data["system_message"], height=150, disabled=True)
+        with col1:
+            st.markdown("### Configuração do Assistente")
+            response = requests.get(API_URL + f'assistants?email={st.session_state['email']}')
+            dict_assistentes = json.loads(response.text)
+            id_assistentes = [ass['id'] for ass in dict_assistentes]
+            id_to_name = lambda id_procurado: next((a["name"] for a in dict_assistentes if a["id"] == id_procurado),  "Não encontrado")
 
-        # **Upload de Arquivo**
-        uploaded_file = st.file_uploader("Upload de Arquivo (Opcional)", type=["txt", "pdf", "json", "csv"])
-        extracted_data = ""
-        if uploaded_file:
-            extracted_data = process_uploaded_file(uploaded_file)
-            st.text_area("Conteúdo do arquivo", value=str(extracted_data), height=200, disabled=True)
+            assistant_id = st.selectbox("Assistente", id_assistentes, format_func = id_to_name, key="assistant_select")
 
-        # **Histórico do Chat**
-        st.subheader("Histórico do Chat")
-        if 'chat_history' not in st.session_state:
-            st.session_state.chat_history = ""
+            assistant = requests.get( API_URL + 'assistants/' + assistant_id + '/retrieve')
+            assistant_attrs = json.loads(assistant.text)
 
-        st.text_area("Chat", value=st.session_state.chat_history, height=300, disabled=True)
+            system_message = st.text_area("System instructions", assistant_attrs['instructions'], key="system_input")
 
-        # **Campo para Entrada de Mensagem**
-        user_message = st.text_input("Enter Message", "")
-        if st.button("Enviar"):
-            if user_message and selected_data:
-                response = query_openai_model(
-                    model=selected_data["model"],
-                    prompt=user_message,
-                    system_message=selected_data["system_message"],
-                    extracted_data=extracted_data,  # Passar o conteúdo extraído para o modelo
-                    temperature=selected_data["temperature"],
-                    max_tokens=150,
-                    top_p=selected_data["top_p"]
-                )
+            # **Garantindo que o modelo selecionado seja passado corretamente**
+            model = st.selectbox("Model", ["gpt-4", "gpt-3.5-turbo"], key=assistant_attrs['model'])
 
-                st.session_state.chat_history += f"\nUsuário: {user_message}\n{selected_assistant}: {response}"
-                st.rerun()
-            elif not selected_data:
-                st.warning("Por favor, selecione um assistente antes de enviar a mensagem.")
+            temperature = st.slider("Temperature", 0.0, 2.0, assistant_attrs['temperature'], key='temperature')
+            top_p = st.slider("Top P",  0.0,1.0, assistant_attrs['top_p'], key = 'top_p')
+
+
+        with col2:
+            chat_container = st.container()
+            with chat_container:
+                for message in st.session_state.messages:
+                    with st.chat_message(message["role"]):
+                        st.markdown(message["content"])
+
+            if prompt := st.chat_input("Enter your message"):
+            # Display user message in chat message container
+                st.chat_message("user").markdown(prompt)
+                st.session_state.messages.append({"role": "user", "content": prompt})
+                
+                if (system_message != assistant_attrs['instructions']) | (model != assistant_attrs['model'] )| (temperature != assistant_attrs['temperature']) | (top_p !=  assistant_attrs['top_p']):
+                    response = requests.post(API_URL + f"assistants/{assistant_id}/update?instructions={system_message}&temperature={temperature}&top_p={top_p}&model={model}")
+                
+                if "thread_id" not in st.session_state:
+                    response = requests.post("http://127.0.0.1:8000/api/threads",json={"email": st.session_state["email"]})
+                    st.session_state['thread_id'] = json.loads(response.text)['id']
+            
+                response = requests.post(API_URL + f'threads/{st.session_state['thread_id']}/messages', json = {"role":"user", "content":prompt})
+                response = requests.post(API_URL + f'threads/{st.session_state['thread_id']}/{assistant_id}/run')
+                
+                chat_response = json.loads(response.text)
+                response = chat_response['content']
+                # Display assistant response in chat message container
+                with st.chat_message("assistant"):
+                    st.markdown(response)
+                # Add assistant response to chat history
+
+                st.session_state.messages.append({"role": "assistant", "content": response})
 
     elif page == "Criar Assistente":
         create_assistant_page()
 
     if st.button("Teste de API"):
+
         print(st.session_state)
         ''' criar assistente
         response = requests.post("http://127.0.0.1:8000/api/assistants", json={
@@ -200,9 +246,11 @@ def openAI_page():
         "temperature": 1.0,
         "top_p": 1.0})
         '''
+        listar_thread = requests.get(f"http://127.0.0.1:8000/api/threads/{st.session_state["thread_id"]}/messages")
         #criar_thread = requests.post("http://127.0.0.1:8000/api/threads",json={"email": "rodrigoquaglio@hotmail.com"})
-        todos_assistants = requests.get("http://127.0.0.1:8000/api/assistants", {"email": st.session_state["email"]})
+        todos_assistants = requests.get("http://127.0.0.1:8000/api/assistants", json = {"email": st.session_state["email"]})
         #criar_mensagem_na_thread = requests.post("http://127.0.0.1:8000/api/threads/thread_mHs4uDnlJ7XTBS96nZTyzO3i/messages",json={"role": "user", "content": "ola criador!"})
         #mandar_run = requests.post("http://127.0.0.1:8000/api/threads/thread_mHs4uDnlJ7XTBS96nZTyzO3i/asst_G8X32xNikCINLfqGhX6g1Gg4/run")
         
-        st.write(todos_assistants.json())
+        st.write(listar_thread)
+# %%

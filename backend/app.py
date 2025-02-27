@@ -4,9 +4,9 @@ from fastapi.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 import os
-from backend.api import auth 
-from backend.api.agents import router as assistants_router
-from backend.api.threads import router as threads_router
+from api import auth 
+from api.agents import router as assistants_router
+from api.threads import router as threads_router
 from fastapi.openapi.utils import get_openapi
 
 def custom_openapi():

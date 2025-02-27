@@ -3,6 +3,7 @@ import os
 import requests
 from dotenv import load_dotenv
 
+load_dotenv()
 import main
 
 def login_page():
