@@ -7,11 +7,17 @@ from main import initialize_session_state, save_user_state
 import openai
 import json
 import pandas as pd
+import base64
 import pdfplumber
 
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+client = openai.OpenAI()
 
+UPLOAD_URL = "https://api.openai.com/v1/files"
 API_URL = "http://127.0.0.1:8000/api/"  
-
+LIST_URL = "https://api.openai.com/v1/files"
+DELETE_URL = "https://api.openai.com/v1/files/"
 
 def change_thread(): 
     st.session_state.messages = []
@@ -26,6 +32,16 @@ def change_thread():
         st.session_state.messages.append(formatted_message)
     return st.session_state.messages
 
+def upload_file(file, thread_id):
+
+    
+
+    vector_store_request = requests.post(API_URL + 'create/vector_store', json = {'name': file.filename, 'file_ids': [file.id]})
+    vector_store_dict = json.loads(vector_store_request.text)
+    vector_store_id = vector_store_dict['id']
+    vector_to_thread_request = requests.post(API_URL + 'add_thread_file', json = {"thread_id":thread_id, "vector_store_id": vector_store_id})    
+
+    return vector_store_id
 
 def handle_logout_click():
     response = requests.post("http://127.0.0.1:8000/auth/logout", json={"email":st.session_state["email"]})
@@ -187,7 +203,8 @@ def openAI_page():
 
         if "messages" not in st.session_state:
             st.session_state.messages = []  
-
+        if "file_ids" not in st.session_state:
+            st.session_state["file_ids"] = {}
         col1, col2 = st.columns([2, 3])
 
         with col1:
@@ -239,14 +256,67 @@ def openAI_page():
                 except: 
                     pass
             
-
             chat_container = st.container(height=400)
             with chat_container:    
                 for message in st.session_state.messages:
                     with st.chat_message(message["role"]):
                         st.markdown(message["content"])
-    
+            st.subheader(":caixa_de_saída: Enviar arquivo para OpenAI")
+            uploaded_file = st.file_uploader("Escolha um arquivo para enviar para a OpenAI", type=["txt", "pdf", "json"])
+
             if prompt := st.chat_input("Enter your message"):
+
+                if uploaded_file is not None:
+                    with st.spinner("Enviando arquivo para OpenAI..."):
+                        files = {"file": (uploaded_file.name, uploaded_file.getvalue())}
+                        headers = {"Authorization": f"Bearer {OPENAI_API_KEY}"}
+                        data = {"purpose": "assistants"}  # Pode ser "answers", "classifications" ou "fine-tune"
+                        response = requests.post(UPLOAD_URL, headers=headers, files=files, data=data)
+                        
+                        if response.status_code == 200:
+                            file_info = response.json()
+
+                            file_id = file_info['id']
+                            st.session_state["file_ids"][uploaded_file.name] = file_id
+                            st.success(f"Arquivo enviado com sucesso! ID: {file_id}")
+                        else:
+                            st.error("Erro ao enviar arquivo para OpenAI")
+                            st.write(response.json())
+                st.subheader("📂 Últimos 5 arquivos enviados para OpenAI")
+
+                with st.spinner("Buscando arquivos..."):
+                    headers = {"Authorization": f"Bearer {OPENAI_API_KEY}"}
+                    response = requests.get(LIST_URL, headers=headers)
+
+                if response.status_code == 200:
+                    files = response.json()["data"]
+
+                    # Ordenar os arquivos pela data de criação e pegar os últimos 5
+                    if files:
+                        files_sorted = sorted(files, key=lambda x: x['created_at'], reverse=True)[:5]
+
+                        for file in files_sorted:
+                            file_name = file['filename']
+                            file_id = file['id']
+
+                            with st.expander(f"📄 {file_name} (ID: {file_id})"):
+                                st.write(file)
+
+                                # Botão para deletar arquivo
+                                if st.button(f"🗑️ Remover {file_name}", key=file_id):
+                                    delete_response = requests.delete(f"{DELETE_URL}{file_id}", headers=headers)
+                                    if delete_response.status_code == 200:
+                                        st.success(f"🗑️ Arquivo {file_name} removido com sucesso!")
+                                        st.session_state["file_ids"].pop(file_name, None)  # Remove da sessão
+                                        st.experimental_rerun()
+                                    else:
+                                        st.error("❌ Erro ao remover arquivo")
+                                        st.write(delete_response.json())
+                    else:
+                        st.info("Nenhum arquivo foi enviado para a OpenAI ainda.")
+                else:
+                    st.error("❌ Erro ao recuperar arquivos da OpenAI")
+                    st.write(response.json())
             # Display user message in chat message container
                 with chat_container:
                     st.chat_message("user").markdown(prompt)
@@ -256,13 +326,15 @@ def openAI_page():
                     
                     response = requests.post(API_URL + f"assistants/{assistant_id}/update", json ={'instructions':system_message,'temperature':temperature, top_p:'top_p','model':model})
 
-                if "thread_id" not in st.session_state:
+                if "thread_id" not in st.session_state or st.session_state['thread_id'] == None:
                     response = requests.post("http://127.0.0.1:8000/api/threads",json={"email": st.session_state["email"]})
                     st.session_state['thread_id'] = json.loads(response.text)['id']
-            
                 response = requests.post(API_URL + f'threads/{st.session_state['thread_id']}/messages', json = {"role":"user", "content":prompt})
                 response = requests.post(API_URL + f'threads/{st.session_state['thread_id']}/{assistant_id}/run')
-                
+                if uploaded_file is not None: 
+                    
+                    vector_created = client.beta.vector_stores.create(name= file_info['filename'], file_ids=[file_info['id']])
+                    my_updated_thread = client.beta.threads.update(st.session_state['thread_id'], tool_resources = {"file_search": {'vector_store_ids':[ vector_created.id]} } )
                 chat_response = json.loads(response.text)
                 response = chat_response['content']
                 # Display assistant response in chat message container

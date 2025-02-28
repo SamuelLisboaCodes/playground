@@ -126,25 +126,3 @@ async def list_messages(thread_id: str):
 
 
 
-"""
-    messages = client.beta.threads.messages.list(thread_id=thread_id)
-    formatted_messages = []
-    for msg in messages.data:
-        content_text = " ".join(
-            block.text.value for block in msg.content)
-
-        formatted_message = Message(
-            id=msg.id,
-            thread_id='thread_PZbs924Euhlu2ocJ4IT1aZgr',
-            role=msg.role,
-            content=content_text,
-            timestamp=datetime.fromtimestamp(msg.created_at)
-        )
-
-        formatted_messages.append(formatted_message)
-            
-
-        return formatted_messages
-    
-"""
-
