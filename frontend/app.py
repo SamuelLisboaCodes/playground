@@ -30,7 +30,6 @@ def process_uploaded_file(uploaded_file):
 
 # Função para consultar o modelo da OpenAI
 def query_openai_model(model, prompt, system_message, extracted_data, temperature, max_tokens, top_p):
-<<<<<<< HEAD
     prompt_with_context = prompt
     if extracted_data:
         prompt_with_context += f"\n\nConteúdo extraído do arquivo:\n{extracted_data}\n\nPor favor, baseie sua resposta no conteúdo extraído."
@@ -39,6 +38,7 @@ def query_openai_model(model, prompt, system_message, extracted_data, temperatur
         model=model,
         messages=[{"role": "system", "content": system_message}] + st.session_state.chat_messages +
                  [{"role": "user", "content": prompt_with_context}],
+<<<<<<< HEAD
 =======
     # Inclui o conteúdo extraído do arquivo no prompt, caso haja
     prompt_with_context = f"{prompt}\n\nConteúdo extraído do arquivo:\n{extracted_data}\n\nPor favor, baseie sua resposta no conteúdo extraído."
@@ -48,6 +48,8 @@ def query_openai_model(model, prompt, system_message, extracted_data, temperatur
         messages=[{"role": "system", "content": system_message},
                   {"role": "user", "content": prompt_with_context}],
 >>>>>>> e8bc4cd (Botão logout e Sidebar (Tela inicial/Criar assistente))
+=======
+>>>>>>> 3079b3a (correção conflito de merge)
         temperature=temperature,
         max_tokens=max_tokens,
         top_p=top_p
@@ -56,7 +58,6 @@ def query_openai_model(model, prompt, system_message, extracted_data, temperatur
 
 # Página de criação do assistente
 def create_assistant_page():
-<<<<<<< HEAD
     st.markdown(
         """
         <h1 style="display: flex; align-items: center;">
@@ -64,9 +65,12 @@ def create_assistant_page():
             <img src="https://static.wixstatic.com/media/950c70_eb49b9b040b14b70972c9777d736f7ea~mv2_d_2112_2112_s_2.gif" alt="Gif" style="margin-left: 10px; height: 50px;">
         </h1>
     """, unsafe_allow_html=True)
+<<<<<<< HEAD
 =======
     st.title("Criar Novo Assistente")
 >>>>>>> e8bc4cd (Botão logout e Sidebar (Tela inicial/Criar assistente))
+=======
+>>>>>>> 3079b3a (correção conflito de merge)
 
     name = st.text_input("Nome do Assistente")
     system_message = st.text_area("Instruções do Sistema")
@@ -96,24 +100,29 @@ def create_assistant_page():
 def main():
     st.set_page_config(layout="wide", page_title="Playground AI - Assistants")
 
-<<<<<<< HEAD
     if 'chat_messages' not in st.session_state:
         st.session_state.chat_messages = []
 
-=======
     # Adicionar o botão de logout no canto superior direito
+<<<<<<< HEAD
 >>>>>>> e8bc4cd (Botão logout e Sidebar (Tela inicial/Criar assistente))
+=======
+>>>>>>> 3079b3a (correção conflito de merge)
     st.markdown(
         """
         <style>
             .logout-button {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 3079b3a (correção conflito de merge)
                 position: absolute;
                 top: 5px;
                 right: 5px;
                 background-color: red;
                 color: white;
+<<<<<<< HEAD
 =======
                 position: fixed;
                 top: 60px;  /* Posição ajustada */
@@ -126,6 +135,8 @@ def main():
                 background-color: red;  /* Cor de fundo vermelha */
                 color: white;  /* Texto branco */
 >>>>>>> e8bc4cd (Botão logout e Sidebar (Tela inicial/Criar assistente))
+=======
+>>>>>>> 3079b3a (correção conflito de merge)
                 border: none;
                 padding: 10px 20px;
                 font-size: 16px;
@@ -133,9 +144,9 @@ def main():
                 border-radius: 5px;
                 box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
                 font-weight: 500;
-<<<<<<< HEAD
                 transition: transform 0.2s ease, background-color 0.2s ease;
                 z-index: 9999;
+<<<<<<< HEAD
 =======
                 transition: transform 0.2s ease, background-color 0.2s ease; /* Adicionando transição para o hover */
 <<<<<<< HEAD
@@ -143,6 +154,8 @@ def main():
 =======
                 z-index: 9999;  /* Garante que o botão fique acima de outros elementos */
 >>>>>>> 3ff6bbe (Correções básicas)
+=======
+>>>>>>> 3079b3a (correção conflito de merge)
             }
 
             .logout-button:hover {
@@ -155,7 +168,6 @@ def main():
         unsafe_allow_html=True
     )
 
-<<<<<<< HEAD
     page = st.sidebar.radio("Navegar para", ["Tela Inicial", "Criar Assistente"])
 
     if page == "Tela Inicial":
@@ -211,6 +223,7 @@ def main():
             elif not selected_data:
                 st.warning("Por favor, selecione um assistente antes de enviar a mensagem.")
 
+<<<<<<< HEAD
 =======
     # Botão "Logout" no canto superior direito
     st.markdown("<button class='logout-button'>Logout</button>", unsafe_allow_html=True)
@@ -275,6 +288,8 @@ def main():
                 st.warning("Por favor, selecione um assistente antes de enviar a mensagem.")
 
 >>>>>>> e8bc4cd (Botão logout e Sidebar (Tela inicial/Criar assistente))
+=======
+>>>>>>> 3079b3a (correção conflito de merge)
     elif page == "Criar Assistente":
         create_assistant_page()
 
