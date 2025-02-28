@@ -24,6 +24,24 @@ async def create_thread(email: str = Body(..., embed=True)):
     
     return new_thread
 
+
+@router.post("/threads/{thread_id}")
+async def delete_thread(thread_id: str, user_email: str = Body(..., embed=True)):
+    """deletar uma nova thread"""
+    
+    messages = await messages_collection.get_messages_by_thread(thread_id)
+    if messages:
+        for msg in messages:
+            await messages_collection.delete_message(msg.id)
+    
+    await users_collection.remove_thread_from_user(user_email,thread_id)
+    thread_deleted=await threads_collection.delete_thread(thread_id)
+    if thread_deleted:
+        #thread = client.beta.threads.delete(thread_id=thread_id)
+        return {'status_code': 200}
+    else:
+        return None
+
 @router.get("/threads")
 async def list_threads(email:str):
     threads_ids = await users_collection.get_user_threads(email)
