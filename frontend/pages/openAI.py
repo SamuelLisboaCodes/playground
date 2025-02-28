@@ -179,27 +179,27 @@ def openAI_page():
             st.markdown("### Configuração do Assistente")
             response = requests.get(API_URL + f'assistants?email={st.session_state['email']}')
             id_assistentes = json.loads(response.text)
-            
-            assistants_list = {i:requests.get( API_URL + 'assistants/' + ass + '/retrieve') for i, ass in enumerate(id_assistentes)}
+            print(id_assistentes)
+            if id_assistentes:
+                assistants_list = {i:requests.get( API_URL + 'assistants/' + ass + '/retrieve') for i, ass in enumerate(id_assistentes)}
+                
+                id_to_name = lambda id_procurado: next((a.json()["name"] for a in assistants_list.values() if a.json()['id'] == id_procurado),  "Não encontrado")
 
-            id_to_name = lambda id_procurado: next((a.json()["name"] for a in assistants_list.values() if a.json()['id'] == id_procurado),  "Não encontrado")
+                assistant_id = st.selectbox("Assistente", id_assistentes, format_func = id_to_name, key="assistant_select")
+                assistant = requests.get( API_URL + 'assistants/' + assistant_id + '/retrieve')
+                assistant_attrs = json.loads(assistant.text)
 
-            assistant_id = st.selectbox("Assistente", id_assistentes, format_func = id_to_name, key="assistant_select")
+                system_message = st.text_area("System instructions", assistant_attrs['instructions'], key="system_input")
 
-            assistant = requests.get( API_URL + 'assistants/' + assistant_id + '/retrieve')
-            assistant_attrs = json.loads(assistant.text)
+                # **Garantindo que o modelo selecionado seja passado corretamente**
+                model = st.selectbox("Model", ["gpt-4o","gpt-4o-mini","gpt-4.5-preview" ,"gpt-3.5-turbo"], key=assistant_attrs['model'])
 
-            system_message = st.text_area("System instructions", assistant_attrs['instructions'], key="system_input")
+                temperature = st.slider("Temperature", 0.0, 2.0, assistant_attrs['temperature'], key='temperature')
+                top_p = st.slider("Top P",  0.0,1.0, assistant_attrs['top_p'], key = 'top_p')
 
-            # **Garantindo que o modelo selecionado seja passado corretamente**
-            model = st.selectbox("Model", ["gpt-4o","gpt-4o-mini","gpt-4.5-preview" ,"gpt-3.5-turbo"], key=assistant_attrs['model'])
-
-            temperature = st.slider("Temperature", 0.0, 2.0, assistant_attrs['temperature'], key='temperature')
-            top_p = st.slider("Top P",  0.0,1.0, assistant_attrs['top_p'], key = 'top_p')
-
-            if st.button("Delete Assistant"): 
-                delete_assitant = requests.post(API_URL + f"assistants/{assistant_id}/delete")
-                st.rerun()
+                if st.button("Delete Assistant"): 
+                    delete_assitant = requests.post(API_URL + f"assistants/{assistant_id}/delete", json={"user_email": st.session_state["email"]})
+                    st.rerun()
 
         with col2:
             chat_container = st.container(height=400)
@@ -215,7 +215,7 @@ def openAI_page():
                 st.session_state.messages.append({"role": "user", "content": prompt})
                 
                 if (system_message != assistant_attrs['instructions']) | (model != assistant_attrs['model'] )| (temperature != assistant_attrs['temperature']) | (top_p !=  assistant_attrs['top_p']):
-                    print("oi")
+                    
                     response = requests.post(API_URL + f"assistants/{assistant_id}/update", json ={'instructions':system_message,'temperature':temperature, top_p:'top_p','model':model})
                 
                 if "thread_id" not in st.session_state:
@@ -249,10 +249,11 @@ def openAI_page():
         "temperature": 1.0,
         "top_p": 1.0})
         '''
-        listar_mensagens = requests.get(f"http://127.0.0.1:8000/api/threads/{st.session_state["thread_id"]}/messages")
+       
         #criar_thread = requests.post("http://127.0.0.1:8000/api/threads",json={"email": "rodrigoquaglio@hotmail.com"})
-        todos_assistants = requests.get("http://127.0.0.1:8000/api/assistants", json = {"email": st.session_state["email"]})
-        #criar_mensagem_na_thread = requests.post("http://127.0.0.1:8000/api/threads/thread_mHs4uDnlJ7XTBS96nZTyzO3i/messages",json={"role": "user", "content": "ola criador!"})
+        messages_threads = requests.get(API_URL + f'threads/thread_dYi0mgyjvOom6F4e5wT3mfSm/messages')
+        #todos_assistants = response = requests.get(API_URL + f'threads?email={st.session_state['email']}')
+        ##criar_mensagem_na_thread = requests.post("http://127.0.0.1:8000/api/threads/thread_mHs4uDnlJ7XTBS96nZTyzO3i/messages",json={"role": "user", "content": "ola criador!"})
         #mandar_run = requests.post("http://127.0.0.1:8000/api/threads/thread_mHs4uDnlJ7XTBS96nZTyzO3i/asst_G8X32xNikCINLfqGhX6g1Gg4/run")
         
-        st.write(listar_mensagens)
+        st.write(messages_threads.json())

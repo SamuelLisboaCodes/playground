@@ -18,12 +18,17 @@ router = APIRouter()
 @router.post("/threads", response_model=Thread)
 async def create_thread(email: str = Body(..., embed=True)):
     """Cria uma nova thread"""
-    print(email)
     thread = client.beta.threads.create()
     new_thread = await threads_collection.create_thread(thread)
     await users_collection.add_thread_to_user(email,thread.id)
     
     return new_thread
+
+@router.get("/threads")
+async def list_threads(email:str):
+    threads_ids = await users_collection.get_user_threads(email)
+    print(threads_ids)
+    return threads_ids.threads
 
 #  Enviar mensagem para a thread
 @router.post("/threads/{thread_id}/messages", response_model=Message)
@@ -96,9 +101,12 @@ async def run_thread(thread_id: str, assistant_id: str):
 async def list_messages(thread_id: str):
     """Lista todas as mensagens de uma thread"""
 
-    messages_list =  await threads_collection.get_messages_by_thread(thread_id)
+    messages_list =  await messages_collection.get_messages_by_thread(thread_id)
     
     return messages_list
+
+
+
 
 """
     messages = client.beta.threads.messages.list(thread_id=thread_id)
