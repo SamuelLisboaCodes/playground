@@ -8,7 +8,7 @@ from config.repositories.message_repository import MongoMessageRepository
 from config.repositories.threads_repository import MongoThreadRepository
 from config.repositories.user_repository import MongoUserRepository
 from config.repositories.run_repository import MongoRunRepository
-from config.repositories.run_repository import MongoRagRepository
+from config.repositories.RAG_repository import MongoRAGRepository
 
 load_dotenv()
 
@@ -21,5 +21,5 @@ assistants_collection = MongoAssistantRepository(mongo_db_client)
 threads_collection = MongoThreadRepository(mongo_db_client)
 messages_collection = MongoMessageRepository(mongo_db_client)
 runs_collection = MongoRunRepository(mongo_db_client)
-rag_collection = MongoRagRepository(mongo_db_client)
+rag_collection = MongoRAGRepository(mongo_db_client)
 
