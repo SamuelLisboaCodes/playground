@@ -8,7 +8,7 @@ import time
 import os
 from api.storage import threads_collection, users_collection,runs_collection, assistants_collection,messages_collection
 
-
+load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
