@@ -12,6 +12,21 @@ import pdfplumber
 
 API_URL = "http://127.0.0.1:8000/api/"  
 
+
+def change_thread(): 
+    st.session_state.messages = []
+    response_data = requests.get(API_URL + f'threads/{st.session_state['thread_id']}/messages')
+    messages = json.loads(response_data.text)
+    for msg in messages:
+        formatted_message = {
+            "role": msg["role"],
+            "content": msg["content"],
+
+        }
+        st.session_state.messages.append(formatted_message)
+    return st.session_state.messages
+
+
 def handle_logout_click():
     response = requests.post("http://127.0.0.1:8000/auth/logout", json={"email":st.session_state["email"]})
     if response.status_code == 200:
@@ -166,7 +181,7 @@ def openAI_page():
         """,
         unsafe_allow_html=True
     )
-        thread_id = False
+
         # Título "Playground AI"
         st.markdown("<div class='playground-title'>Playground AI</div>", unsafe_allow_html=True)
 
@@ -202,12 +217,25 @@ def openAI_page():
                     st.rerun()
 
         with col2:
+            
+
+            thread_list = ['thread_dYi0mgyjvOom6F4e5wT3mfSm']
+            
+            st.session_state['thread_id'] = st.selectbox("Threads", options= thread_list, index = None ,key="thread_select")
+
+            if "thread_id"  in st.session_state: 
+                try:
+                    change_thread()
+                except: 
+                    pass
+            
+
             chat_container = st.container(height=400)
-            with chat_container:
+            with chat_container:    
                 for message in st.session_state.messages:
                     with st.chat_message(message["role"]):
                         st.markdown(message["content"])
-
+    
             if prompt := st.chat_input("Enter your message"):
             # Display user message in chat message container
                 with chat_container:
@@ -217,7 +245,7 @@ def openAI_page():
                 if (system_message != assistant_attrs['instructions']) | (model != assistant_attrs['model'] )| (temperature != assistant_attrs['temperature']) | (top_p !=  assistant_attrs['top_p']):
                     
                     response = requests.post(API_URL + f"assistants/{assistant_id}/update", json ={'instructions':system_message,'temperature':temperature, top_p:'top_p','model':model})
-                
+
                 if "thread_id" not in st.session_state:
                     response = requests.post("http://127.0.0.1:8000/api/threads",json={"email": st.session_state["email"]})
                     st.session_state['thread_id'] = json.loads(response.text)['id']
@@ -233,7 +261,7 @@ def openAI_page():
                 # Add assistant response to chat history
 
                 st.session_state.messages.append({"role": assistant_attrs['name'], "content": response})
-
+            # text_uploaded_file = st.file_uploader("Adicione um arquivo ao seu prompt")
     elif page == "Criar Assistente":
         create_assistant_page()
 
