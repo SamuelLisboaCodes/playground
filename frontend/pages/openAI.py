@@ -219,9 +219,9 @@ def openAI_page():
         with col2:
             
 
-            thread_list = ['thread_dYi0mgyjvOom6F4e5wT3mfSm']
-            
-            st.session_state['thread_id'] = st.selectbox("Threads", options= thread_list, index = None ,key="thread_select")
+            response = requests.get(API_URL + f'threads?email={st.session_state['email']}')
+            threads_list = json.loads(response.text)
+            st.session_state['thread_id'] = st.selectbox("Threads", options= threads_list, index = None ,key="thread_select")
 
             if "thread_id"  in st.session_state: 
                 try:
