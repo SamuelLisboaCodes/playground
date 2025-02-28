@@ -2,6 +2,22 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
+
+class RagUploadPoll(BaseModel):
+    vector_id: str
+    files: List[str] =[]
+
+class RagUserFiles(BaseModel):
+    file_id: str
+    purpose: str
+
+    file_attach: str 
+
+class RagVectorStore(BaseModel):
+    vector_id: str
+    name: str
+    file_ids: Optional[str] = []
+
 #Classe referente ao "run" do prompt
 class Run(BaseModel):
     id: str

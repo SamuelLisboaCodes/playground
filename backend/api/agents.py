@@ -15,7 +15,7 @@ client = OpenAI(api_key= OPENAI_API_KEY)
 router = APIRouter()
 
 @router.post("/assistants", response_model=Assistant)
-async def create_assistant(user_email: str = Body(..., embed=True), request: Assistant = Body(..., embed=True)):
+async def create_assistant(request: Assistant, user_email: str = Body(..., embed=True)):
     """Cria um novo assistente na API da OpenAI"""
     print(request)
     assistant = client.beta.assistants.create(
@@ -62,12 +62,13 @@ async def retrieve_assistant(assistant_id: str):
 
 
 @router.post("/assistants/{assistant_id}/update")
-async def update_assistant(assistant_id: str, instructions: str, temperature: float, top_p:float, model: str ):
+async def update_assistant(assistant_id: str, instructions: str = Body(..., embed=True), temperature: float = Body(..., embed=True), top_p: float = Body(..., embed=True), model: str= Body(..., embed=True) ):
     update_assistant = client.beta.assistants.update(assistant_id = assistant_id,
                                      instructions = instructions,
                                      model=model, 
                                      temperature= temperature,
                                      top_p = top_p)
+    await assistants_collection.update_assistant(update_assistant)
     return update_assistant
 
 @router.post("/assistants/{assistant_id}/delete")

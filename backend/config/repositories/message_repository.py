@@ -7,14 +7,14 @@ class MongoMessageRepository:
         """Inicializa a conexão com a coleção 'messages' no banco 'playground_DB'."""
         self.collection = client.messages
 
-    async def create_message(self, new_message: Message, content: str):
+    async def create_message(self, new_message: Message):
         """Cria uma nova mensagem no banco de dados."""
         try:
             document = await self.collection.insert_one({
                 "id": new_message.id,
                 "thread_id": new_message.thread_id,
                 "role": new_message.role,
-                "content": content,
+                "content": new_message.content,
                 "timestamp": datetime.now()
             })
             return await self.get_message(new_message.id) if document else None
@@ -70,7 +70,7 @@ class MongoMessageRepository:
     async def get_messages_by_thread(self, thread_id: str):
         """Obtém todas as mensagens de uma thread pelo ID."""
         try:
-            messages = await self.collection.find({"thread_id": thread_id}).to_list(length=None)
+            messages = await self.collection.find({"thread_id": thread_id})
             return [self.__to_message_model(msg) for msg in messages]
         except PyMongoError as e:
             print(f"Erro ao obter mensagens da thread: {e}")

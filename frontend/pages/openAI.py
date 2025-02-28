@@ -213,7 +213,8 @@ def openAI_page():
                 st.session_state.messages.append({"role": "user", "content": prompt})
                 
                 if (system_message != assistant_attrs['instructions']) | (model != assistant_attrs['model'] )| (temperature != assistant_attrs['temperature']) | (top_p !=  assistant_attrs['top_p']):
-                    response = requests.post(API_URL + f"assistants/{assistant_id}/update?instructions={system_message}&temperature={temperature}&top_p={top_p}&model={model}")
+                    print("oi")
+                    response = requests.post(API_URL + f"assistants/{assistant_id}/update", json ={'instructions':system_message,'temperature':temperature, top_p:'top_p','model':model})
                 
                 if "thread_id" not in st.session_state:
                     response = requests.post("http://127.0.0.1:8000/api/threads",json={"email": st.session_state["email"]})

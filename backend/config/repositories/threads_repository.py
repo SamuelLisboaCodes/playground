@@ -38,6 +38,7 @@ class MongoThreadRepository:
         except PyMongoError as e:
             print(f"Erro ao obter thread: {e}")
             return None
+        
     async def update_thread(self, updated_thread: Thread):
         """Atualiza os dados de uma thread no banco de dados."""
         try:
@@ -62,6 +63,7 @@ class MongoThreadRepository:
         except PyMongoError as e:
             print(f"Erro ao excluir thread: {e}")
             return None
+        
     async def update_assistant_thread(self, thread_id: str, assistant_id: str):
         try:
             result = await self.collection.update_one({"id": thread_id},
@@ -77,7 +79,7 @@ class MongoThreadRepository:
         try:
             result = await self.collection.update_one({"id": thread_id},
                     
-                                                  {"$push": {"messages": new_message_id}})
+                                                  {"$addToSet": {"messages": new_message_id}})
             return result
                 
         except PyMongoError as e:
@@ -102,7 +104,7 @@ class MongoThreadRepository:
         try:
             result = await self.collection.update_one({"id": thread_id},
                     
-                                                  {"$push": {"threads": new_run_id}})
+                                                  {"$push": {"runs": new_run_id}})
             return result
                 
         except PyMongoError as e:

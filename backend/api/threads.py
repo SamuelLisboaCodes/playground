@@ -36,8 +36,8 @@ async def send_message(thread_id: str, role: str = Body(..., embed=True), conten
     role=role,  # "user" para usuário, "assistant" para assistente
     content=content
     )
-    print(message)
-    new_message_obj = await messages_collection.create_message(message, content)
+    message.content = content
+    new_message_obj = await messages_collection.create_message(message)
     returns = await threads_collection.update_thread_message(message.id, thread_id)
     
     return new_message_obj
@@ -75,7 +75,7 @@ async def run_thread(thread_id: str, assistant_id: str):
                 #  Extrair corretamente os blocos de texto
                 content_text = " ".join(
                                 block.text.value for block in msg.content)
-                new_message = Message(
+                messages = Message(
                     id=msg.id,
                     thread_id=thread_id,
                     assistant_id=assistant_id,
@@ -83,8 +83,13 @@ async def run_thread(thread_id: str, assistant_id: str):
                     content=content_text.strip(), 
                     timestamp=datetime.now()
                 )
-                await messages_collection.update_message(new_message)
-                return new_message
+                
+        await messages_collection.create_message(messages)
+        await threads_collection.update_thread_message(messages.id, thread_id)
+        await threads_collection.update_thread_runs(run.id, thread_id)
+        return messages
+
+                
 
 
 @router.get("/threads/{thread_id}/messages", response_model=List[Message])

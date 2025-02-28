@@ -41,7 +41,7 @@ class MongoAssistantRepository():
                                                         "temperature":update_assistant.temperature,
                                                         "threads": update_assistant.threads,
                                                         "top_p":update_assistant.top_p}})
-            return result
+            return True if result else None
         except PyMongoError as e:
             print(f"Erro ao up usuário: {e}") 
 
