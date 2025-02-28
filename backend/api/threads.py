@@ -37,7 +37,7 @@ async def delete_thread(thread_id: str, user_email: str = Body(..., embed=True))
     await users_collection.remove_thread_from_user(user_email,thread_id)
     thread_deleted=await threads_collection.delete_thread(thread_id)
     if thread_deleted:
-        #thread = client.beta.threads.delete(thread_id=thread_id)
+        thread = client.beta.threads.delete(thread_id=thread_id)
         return {'status_code': 200}
     else:
         return None
@@ -122,7 +122,6 @@ async def list_messages(thread_id: str):
     messages_list =  await messages_collection.get_messages_by_thread(thread_id)
     
     return messages_list
-
 
 
 
