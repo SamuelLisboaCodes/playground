@@ -8,7 +8,7 @@ class MongoRAGRepository:
         self.collection = client.rags
 
     async def create_vector_store(self, new_vector: RagVectorStore):
-        """Cria uma nova thread no banco de dados."""
+        """Cria um novo vector no banco de dados."""
         try:
             document = await self.collection.insert_one({
                 "vector_id": new_vector.id,
@@ -16,18 +16,18 @@ class MongoRAGRepository:
                 "file_ids": new_vector.get("file_ids",[])
             })
     
-            return await self.get_vector_store(new_vector.id) if document.inserted_id else None
+            return await self.get_vector_store(new_vector.id) if document.vector_id else None
         except PyMongoError as e:
-            print(f"Erro ao registrar thread: {e}")
+            print(f"Erro ao registrar vector_store: {e}")
             return None
 
     async def get_vector_store(self, vector_id: str):
         
         try:
             document = await self.collection.find_one({"vector_id": vector_id})
-            return self.__to_thread_model(document) if document else None
+            return self.__to_vector_store_model(document) if document else None
         except PyMongoError as e:
-            print(f"Erro ao obter thread: {e}")
+            print(f"Erro ao obter vector_store: {e}")
             return None
         
     async def update_vector_store(self, update_vector: RagVectorStore):
@@ -41,7 +41,7 @@ class MongoRAGRepository:
             )
             return result.modified_count > 0  # Retorna True se houve atualização
         except PyMongoError as e:
-            print(f"Erro ao atualizar thread: {e}")
+            print(f"Erro ao atualizar vector_store: {e}")
             return None
     async def create_user_files(self, new_file: RagUserFiles):
         try:
@@ -52,21 +52,21 @@ class MongoRAGRepository:
             "file_attach": new_file.file_attach
         })
 
-            return await self.get_vector_store(new_file.id) if document.inserted_id else None
+            return await self.get_user_file(new_file.id) if document.file_id else None
         except PyMongoError as e:
-            print(f"Erro ao registrar thread: {e}")
+            print(f"Erro ao registrar files: {e}")
             return None
         
     async def get_user_file(self, file_id: str):
         
         try:
             document = await self.collection.find_one({"file_id": file_id})
-            return self.__to_thread_model(document) if document else None
+            return self.__to_files_model(document) if document else None
         except PyMongoError as e:
-            print(f"Erro ao obter thread: {e}")
+            print(f"Erro ao obter file: {e}")
             return None
         
-    async def delete_user_files(self, file_id: str):
+    async def delete_user_file(self, file_id: str):
         
         try:
             result = await self.collection.delete_one({"file_id": file_id})
@@ -75,11 +75,17 @@ class MongoRAGRepository:
             print(f"Erro ao excluir file: {e}")
 
 
-    
+    def __to_vector_store_model(self, obj: dict) -> RagVectorStore:
+        """Converte um documento do MongoDB para um objeto Vector_Store."""
+        return RagVectorStore(
+            vector_id = obj["vector_id"],
+            name= obj["name"],
+            file_ids= obj["file_ids"]
+        )
 
-    def __to_files_model(self, obj: dict) -> Thread:
-        """Converte um documento do MongoDB para um objeto Thread."""
-        return Thread(
+    def __to_files_model(self, obj: dict) -> RagUserFiles:
+        """Converte um documento do MongoDB para um objeto RagUserFiles."""
+        return RagUserFiles(
             files_id=obj["files_id"],
             purpose=obj.get("purpose"),
             user_email=obj.get("user_email"),

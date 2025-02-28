@@ -82,9 +82,11 @@ async def update_assistant(assistant_id: str, tools):
     return update_assistant
 
 @router.post("/assistants/{assistant_id}/delete")
-async def delete_assistant(assistant_id: str): 
+async def delete_assistant(assistant_id: str, user_email: str = Body(..., embed=True)): 
     delete_assistant = client.beta.assistants.delete(assistant_id=assistant_id)
+    await users_collection.remove_assistant_from_user(user_email=user_email, assistant_id=assistant_id)
     await assistants_collection.delete_assistant(assistant_id=assistant_id)
+    
 
     return delete_assistant
 

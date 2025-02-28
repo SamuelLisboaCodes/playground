@@ -28,6 +28,15 @@ class MongoUserRepository():
         except PyMongoError as e:
             print(f"Erro ao get usuário: {e}") 
 
+    async def get_user_threads(self, user_email: str):
+        try:
+            document = await self.collection.find_one({"email":user_email})
+            print(document)
+            return self.__to_user_model(document) if document else None
+       
+        except PyMongoError as e:
+            print(f"Erro ao get usuário: {e}") 
+
     async def get_user_assistants(self, user_email: str):
         try:
             document = await self.collection.find_one({"email":user_email})
@@ -65,11 +74,11 @@ class MongoUserRepository():
             print(f"Erro ao adicionar assistente ao usuário: {e}")
             return None
 
-    async def remove_assistant_from_user(self, user_id: str, assistant_id: str):
+    async def remove_assistant_from_user(self, user_email: str, assistant_id: str):
         """Remove um assistente da lista de assistentes do usuário."""
         try:
             result = await self.collection.update_one(
-                {"id": user_id},
+                {"email": user_email},
                 {"$pull": {"assistants": assistant_id}}  # Remove a referência do assistente
             )
             return result.modified_count > 0

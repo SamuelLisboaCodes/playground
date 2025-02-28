@@ -1,3 +1,4 @@
+import json
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import PyMongoError
 from config.models import Message  # Importando a classe Message do arquivo models.py
@@ -13,7 +14,7 @@ class MongoMessageRepository:
             document = await self.collection.insert_one({
                 "id": new_message.id,
                 "thread_id": new_message.thread_id,
-                "assistant_id":new_message.assistant_id,
+                "assistant_id": new_message.assistant_id,
                 "role": new_message.role,
                 "content": new_message.content,
                 "timestamp": datetime.now()
@@ -71,8 +72,9 @@ class MongoMessageRepository:
     async def get_messages_by_thread(self, thread_id: str):
         """Obtém todas as mensagens de uma thread pelo ID."""
         try:
-            messages = await self.collection.find({"thread_id": thread_id})
-            print(messages)
+            messages = []
+            async for msg in self.collection.find({"thread_id": thread_id}):
+                messages.append(self.__to_message_model(msg))
             return messages
         except PyMongoError as e:
             print(f"Erro ao obter mensagens da thread: {e}")
