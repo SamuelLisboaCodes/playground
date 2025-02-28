@@ -1,6 +1,6 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import PyMongoError
-from config.models import RagUserFiles, RagVectorStore, Thread  # Importando a classe Thread do arquivo models.py
+from config.models import RagUploadPoll, RagUserFiles, RagVectorStore, Thread  # Importando a classe Thread do arquivo models.py
 
 class MongoRAGRepository:
     def __init__(self, client: AsyncIOMotorClient):
@@ -74,7 +74,17 @@ class MongoRAGRepository:
         except PyMongoError as e:
             print(f"Erro ao excluir file: {e}")
 
+    async def create_and_poll_vector_file(self,new_upload: RagUploadPoll):
+        try:
+            document = await self.collection.insert_one({
+            "vector_store_id": new_upload.vector_store_id,
+            "file_ids": new_upload.file_ids
+        })
 
+            return await self.get_user_file(new_upload.vector_store_id) if document.file_id else None
+        except PyMongoError as e:
+            print(f"Erro ao registrar files: {e}")
+            return None
     def __to_vector_store_model(self, obj: dict) -> RagVectorStore:
         """Converte um documento do MongoDB para um objeto Vector_Store."""
         return RagVectorStore(

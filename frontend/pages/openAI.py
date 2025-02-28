@@ -221,7 +221,17 @@ def openAI_page():
 
             response = requests.get(API_URL + f'threads?email={st.session_state['email']}')
             threads_list = json.loads(response.text)
-            st.session_state['thread_id'] = st.selectbox("Threads", options= threads_list, index = None ,key="thread_select")
+           
+            col1, col2 = st.columns([3, 1])
+            
+            with col1:
+                st.session_state['thread_id'] = st.selectbox(f"threads", options= threads_list, key='thread-select')
+            
+            with col2:
+                if st.button("❌ Excluir", key=f"del"):
+                    response = requests.post(API_URL + f'threads/{st.session_state['thread_id']}', json={'user_email':st.session_state['email']})
+                    st.session_state['thread_id'] = None
+                    st.rerun()
 
             if "thread_id"  in st.session_state: 
                 try:
@@ -279,9 +289,9 @@ def openAI_page():
         '''
        
         #criar_thread = requests.post("http://127.0.0.1:8000/api/threads",json={"email": "rodrigoquaglio@hotmail.com"})
-        messages_threads = requests.get(API_URL + f'threads/thread_dYi0mgyjvOom6F4e5wT3mfSm/messages')
+        #messages_threads = requests.get(API_URL + f'threads/thread_dYi0mgyjvOom6F4e5wT3mfSm/messages')
         #todos_assistants = response = requests.get(API_URL + f'threads?email={st.session_state['email']}')
         ##criar_mensagem_na_thread = requests.post("http://127.0.0.1:8000/api/threads/thread_mHs4uDnlJ7XTBS96nZTyzO3i/messages",json={"role": "user", "content": "ola criador!"})
         #mandar_run = requests.post("http://127.0.0.1:8000/api/threads/thread_mHs4uDnlJ7XTBS96nZTyzO3i/asst_G8X32xNikCINLfqGhX6g1Gg4/run")
         
-        st.write(messages_threads.json())
+        #st.write(messages_threads.json())

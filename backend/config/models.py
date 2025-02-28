@@ -5,7 +5,7 @@ from datetime import datetime
 
 class RagUploadPoll(BaseModel):
     vector_id: str
-    files: List[str] =[]
+    files_ids: List[str] =[]
 
 class RagUserFiles(BaseModel):
     file_id: Optional[str]
@@ -16,7 +16,7 @@ class RagUserFiles(BaseModel):
 class RagVectorStore(BaseModel):
     vector_id: Optional[str]
     name: str
-    file_ids: Optional[str] = []
+    file_id: Optional[str] = []
 
 #Classe referente ao "run" do prompt
 class Run(BaseModel):
@@ -43,6 +43,7 @@ class Message(BaseModel):
     role: str  
     content: str
     timestamp: datetime
+    
 
 #Classe referente ao assistant criado
 class Assistant(BaseModel):

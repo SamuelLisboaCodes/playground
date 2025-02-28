@@ -29,15 +29,7 @@ class MongoThreadRepository:
         except PyMongoError as e:
             print(f"Erro ao obter thread: {e}")
             return None
-        
-    async def get_messages_by_thread(self, thread_id: str):
-        """Obtém uma thread pelo ID."""
-        try:
-            document = await self.collection.find_one({"id": thread_id})
-            return self.__to_thread_model(document).messages if document else None
-        except PyMongoError as e:
-            print(f"Erro ao obter thread: {e}")
-            return None
+    
         
     async def update_thread(self, updated_thread: Thread):
         """Atualiza os dados de uma thread no banco de dados."""
