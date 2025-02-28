@@ -47,6 +47,7 @@ class MongoRAGRepository:
         try:
             document = await self.collection.insert_one({
             "file_id": new_file.id,
+            "user_email": RagUserFiles,
             "purpose": new_file.purpose,
             "file_attach": new_file.file_attach
         })
@@ -55,13 +56,25 @@ class MongoRAGRepository:
         except PyMongoError as e:
             print(f"Erro ao registrar thread: {e}")
             return None
-    async def delete_thread(self, thread_id: str):
+        
+    async def get_user_file(self, file_id: str):
         
         try:
-            result = await self.collection.delete_one({"id": thread_id})
+            document = await self.collection.find_one({"file_id": file_id})
+            return self.__to_thread_model(document) if document else None
+        except PyMongoError as e:
+            print(f"Erro ao obter thread: {e}")
+            return None
+        
+    async def delete_user_files(self, file_id: str):
+        
+        try:
+            result = await self.collection.delete_one({"file_id": file_id})
             return result.deleted_count > 0  # Retorna True se a thread foi deletada
         except PyMongoError as e:
-            print(f"Erro ao excluir thread: {e}")
+            print(f"Erro ao excluir file: {e}")
+
+
             return None
     async def update_assistant_thread(self, thread_id: str, assistant_id: str):
         try:

@@ -10,6 +10,7 @@ class RagUploadPoll(BaseModel):
 class RagUserFiles(BaseModel):
     file_id: Optional[str]
     purpose: str
+    user_email: str
     file_attach: str 
 
 class RagVectorStore(BaseModel):

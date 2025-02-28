@@ -1,11 +1,11 @@
 from openai import OpenAI 
 from typing_extensions import override
 from fastapi import APIRouter, HTTPException, Body
-from config.models import  Assistant, RagUserFiles, RagVectorStore
+from config.models import  Assistant, RagUploadPoll, RagUserFiles, RagVectorStore
 import os
 
 from dotenv import load_dotenv
-from api.storage import users_collection, assistants_collection
+from api.storage import users_collection, assistants_collection, rag_collection
 
 
 load_dotenv()
@@ -79,17 +79,38 @@ async def delete_assistant(assistant_id: str):
     return delete_assistant
 
 
+@router.get("files/{file_id}")
+async def retrive_file(file_id: str):
+    get_file = await rag_collection.get_user_file(file_id)
+    return get_file
+
 
 @router.post("/create/vector_store")
 async def create_RAG(vector_store: RagVectorStore):
     vector_created = client.beta.vector_stores.create(name= vector_store.name, file_ids=vector_store)
-    
-    pass
+    new_vector= await rag_collection.create_vector_store(vector_created)
+    return  new_vector
+
 @router.post("/create/files")
 async def create_RAG(files_store: RagUserFiles):
     file_created =  client.files.create(
   file=files_store["file_attach"], 
   purpose=files_store["purpose"]
-), 
+)
+    new_file = await rag_collection.create_user_files(file_created)
+    return new_file
+
+@router.post("/delete/files/{file_id}")
+async def create_RAG(file_id: str):
+    file_created =  client.files.delete(file_id)
+    new_file = await rag_collection.delete_user_files(file_id)
     
+    return new_file
+
+@router.post("/vector_store_files/poll")
+async def create_and_poll(rag_to_upload: RagUploadPoll):
+    file_uploaded = client.beta.vector_stores.files.create_and_poll(
+  vector_store_id= rag_to_upload.vector_id,
+  file_id= rag_to_upload.files
+)
     pass
