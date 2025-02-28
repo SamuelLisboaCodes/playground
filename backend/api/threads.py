@@ -96,11 +96,10 @@ async def run_thread(thread_id: str, assistant_id: str):
 async def list_messages(thread_id: str):
     """Lista todas as mensagens de uma thread"""
 
-    messages_list =  await threads_collection.get_messages_by_thread(thread_id)
+    # messages_list =  await threads_collection.get_messages_by_thread(thread_id)
     
-    return messages_list
+    # return messages_list
 
-"""
     messages = client.beta.threads.messages.list(thread_id=thread_id)
     formatted_messages = []
     for msg in messages.data:
@@ -108,17 +107,25 @@ async def list_messages(thread_id: str):
             block.text.value for block in msg.content)
 
         formatted_message = Message(
-            id=msg.id,
-            thread_id='thread_PZbs924Euhlu2ocJ4IT1aZgr',
+            id = msg.id,
+            thread_id=thread_id,
             role=msg.role,
             content=content_text,
-            timestamp=datetime.fromtimestamp(msg.created_at)
+            timestamp=datetime.fromtimestamp(msg.created_at), 
+            assistant_id= 'assistant_id'
         )
 
         formatted_messages.append(formatted_message)
             
 
-        return formatted_messages
+    return formatted_messages
+
+@router.post('/add_thread_file')
+async def add_file(thread_id: str = Body(..., embed=True), vector_store_id: str = Body(..., embed=True)): 
+        my_updated_thread = client.beta.threads.update(
+    thread_id,
+tool_resources = {"file_search": vector_store_id}
+    )
     
-"""
+
 

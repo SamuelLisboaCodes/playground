@@ -13,6 +13,7 @@ class MongoMessageRepository:
             document = await self.collection.insert_one({
                 "id": new_message.id,
                 "thread_id": new_message.thread_id,
+                "assistant_id":new_message.assistant_id,
                 "role": new_message.role,
                 "content": new_message.content,
                 "timestamp": datetime.now()

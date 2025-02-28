@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Body, UploadFile, File
 from config.models import  Assistant, RagUploadPoll, RagUserFiles, RagVectorStore
 import os
 import base64
+import python_multipart
 
 from dotenv import load_dotenv
 from api.storage import users_collection, assistants_collection, rag_collection
