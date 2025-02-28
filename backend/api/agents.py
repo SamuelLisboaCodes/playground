@@ -1,7 +1,7 @@
 from openai import OpenAI 
 from typing_extensions import override
 from fastapi import APIRouter, HTTPException, Body
-from config.models import  Assistant
+from config.models import  Assistant, RagUserFiles, RagVectorStore
 import os
 
 from dotenv import load_dotenv
@@ -39,15 +39,15 @@ async def create_assistant(request: Assistant, user_email: str = Body(..., embed
 @router.get("/assistants")
 async def list_assistants(email: str):
     """Lista todos os assistentes criados"""
-    assistants = client.beta.assistants.list()
-    return [{"id": a.id, "name": a.name, "model": a.model} for a in assistants.data]
+    assistants_ids = await users_collection.get_user_assistants(email)
+    return assistants_ids.assistants
 
 @router.get("/assistants/{assistant_id}/retrieve", response_model=Assistant)
 async def retrieve_assistant(assistant_id: str):
     """Lista os atributos de um assistente pelo ID"""
     try:
         # Se for uma requisição assíncrona, precisa de await
-        assistant_info =  client.beta.assistants.retrieve(  assistant_id)
+        assistant_info =  client.beta.assistants.retrieve( assistant_id)
 
         return Assistant(
             id=assistant_info.id,
@@ -62,10 +62,10 @@ async def retrieve_assistant(assistant_id: str):
 
 
 @router.post("/assistants/{assistant_id}/update")
-async def update_assistant(assistant_id: str, instructions: str = Body(..., embed=True), temperature: float = Body(..., embed=True), top_p: float = Body(..., embed=True), model: str= Body(..., embed=True) ):
+async def update_assistant(assistant_id: str, instructions: str = Body(..., embed=True), temperature: float = Body(..., embed=True), top_p: float = Body(..., embed=True), model: str= Body(..., embed=True), tools_resources: list = Body(...,embed=True) ):
     update_assistant = client.beta.assistants.update(assistant_id = assistant_id,
                                      instructions = instructions,
-                                     model=model, 
+                                     model=model,
                                      temperature= temperature,
                                      top_p = top_p)
     await assistants_collection.update_assistant(update_assistant)
@@ -77,3 +77,19 @@ async def delete_assistant(assistant_id: str):
     await assistants_collection.delete_assistant(assistant_id=assistant_id)
 
     return delete_assistant
+
+
+
+@router.post("/create/vector_store")
+async def create_RAG(vector_store: RagVectorStore):
+    vector_created = client.beta.vector_stores.create(name= vector_store.name, file_ids=vector_store)
+    
+    pass
+@router.post("/create/files")
+async def create_RAG(files_store: RagUserFiles):
+    file_created =  client.files.create(
+  file=files_store["file_attach"], 
+  purpose=files_store["purpose"]
+), 
+    
+    pass

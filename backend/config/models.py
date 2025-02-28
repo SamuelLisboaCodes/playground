@@ -8,13 +8,12 @@ class RagUploadPoll(BaseModel):
     files: List[str] =[]
 
 class RagUserFiles(BaseModel):
-    file_id: str
+    file_id: Optional[str]
     purpose: str
-
     file_attach: str 
 
 class RagVectorStore(BaseModel):
-    vector_id: str
+    vector_id: Optional[str]
     name: str
     file_ids: Optional[str] = []
 

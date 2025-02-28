@@ -22,10 +22,11 @@ class MongoAssistantRepository():
             return await self.get_assistant(new_assistant.id) if document else None
         except PyMongoError as e:
             print(f"Erro ao registrar assistant: {e}")
-             
+
     async def get_assistant(self, assistant_id: str):
         try:
             document =  await self.collection.find_one({"id":assistant_id})
+            
             return self.__to_assistant_model(document) if document else None
         except PyMongoError as e:
             print(f"Erro ao pegar assistant: {e}") 

@@ -71,7 +71,8 @@ class MongoMessageRepository:
         """Obtém todas as mensagens de uma thread pelo ID."""
         try:
             messages = await self.collection.find({"thread_id": thread_id})
-            return [self.__to_message_model(msg) for msg in messages]
+            print(messages)
+            return messages
         except PyMongoError as e:
             print(f"Erro ao obter mensagens da thread: {e}")
             return None
@@ -81,7 +82,7 @@ class MongoMessageRepository:
         return Message(
             id=obj["id"],
             thread_id=obj["thread_id"],
-            assistant_id=obj.get("assistant_id"),
+            assistant_id=obj["assistant_id"],
             role=obj["role"],
             content=obj["content"],
             timestamp=obj["timestamp"]

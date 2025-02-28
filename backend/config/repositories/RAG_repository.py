@@ -22,7 +22,7 @@ class MongoRAGRepository:
             return None
 
     async def get_vector_store(self, vector_id: str):
-        """Obtém uma thread pelo ID."""
+        
         try:
             document = await self.collection.find_one({"vector_id": vector_id})
             return self.__to_thread_model(document) if document else None
@@ -31,7 +31,7 @@ class MongoRAGRepository:
             return None
         
     async def update_vector_store(self, update_vector: RagVectorStore):
-        """Atualiza os dados de uma thread no banco de dados."""
+        
         try:
             result = await self.collection.update_one(
                 {"vector_id": update_vector.id},
@@ -56,7 +56,7 @@ class MongoRAGRepository:
             print(f"Erro ao registrar thread: {e}")
             return None
     async def delete_thread(self, thread_id: str):
-        """Remove uma thread do banco de dados."""
+        
         try:
             result = await self.collection.delete_one({"id": thread_id})
             return result.deleted_count > 0  # Retorna True se a thread foi deletada

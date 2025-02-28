@@ -30,8 +30,9 @@ class MongoUserRepository():
 
     async def get_user_assistants(self, user_email: str):
         try:
-            document =  await self.collection.find_one({"email":user_email})
-            return document["assistants"] if document else None
+            document = await self.collection.find_one({"email":user_email})
+            
+            return self.__to_user_model(document) if document else None
        
         except PyMongoError as e:
             print(f"Erro ao get usuário: {e}") 
@@ -87,7 +88,7 @@ class MongoUserRepository():
         except PyMongoError as e:
             print(f"Erro ao remover assistente do usuário: {e}")
             return None    
-    def __to_user_model(self, obj: dict[str,any]) -> User:
+    def __to_user_model(self, obj: dict) -> User:
         return User(
             id = obj["id"],
             email= obj["email"],

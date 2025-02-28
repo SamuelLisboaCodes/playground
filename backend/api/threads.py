@@ -97,6 +97,7 @@ async def list_messages(thread_id: str):
     """Lista todas as mensagens de uma thread"""
 
     messages_list =  await threads_collection.get_messages_by_thread(thread_id)
+    
     return messages_list
 
 """
