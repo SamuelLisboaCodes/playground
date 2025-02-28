@@ -1,8 +1,9 @@
 from openai import OpenAI 
 from typing_extensions import override
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter, HTTPException, Body, UploadFile, File
 from config.models import  Assistant, RagUploadPoll, RagUserFiles, RagVectorStore
 import os
+import base64
 
 from dotenv import load_dotenv
 from api.storage import users_collection, assistants_collection, rag_collection
@@ -39,6 +40,8 @@ async def create_assistant(request: Assistant, user_email: str = Body(..., embed
 @router.get("/assistants")
 async def list_assistants(email: str):
     """Lista todos os assistentes criados"""
+    # assistants = client.beta.assistants.list()
+    # return [{"id": a.id, "name": a.name, "model": a.model} for a in assistants.data]    
     assistants_ids = await users_collection.get_user_assistants(email)
     return assistants_ids.assistants
 
@@ -71,6 +74,12 @@ async def update_assistant(assistant_id: str, instructions: str = Body(..., embe
     await assistants_collection.update_assistant(update_assistant)
     return update_assistant
 
+@router.post("/assistants/{assistant_id}/toggle_file_search")
+async def update_assistant(assistant_id: str, tools):
+    update_assistant = client.beta.assistants.update(assistant_id = assistant_id, tools = tools)
+    
+    return update_assistant
+
 @router.post("/assistants/{assistant_id}/delete")
 async def delete_assistant(assistant_id: str): 
     delete_assistant = client.beta.assistants.delete(assistant_id=assistant_id)
@@ -87,18 +96,19 @@ async def retrive_file(file_id: str):
 
 @router.post("/create/vector_store")
 async def create_RAG(vector_store: RagVectorStore):
-    vector_created = client.beta.vector_stores.create(name= vector_store.name, file_ids=vector_store)
+    vector_created = client.beta.vector_stores.create(name= vector_store.name, file_ids=vector_store.file_ids)
     new_vector= await rag_collection.create_vector_store(vector_created)
     return  new_vector
 
 @router.post("/create/files")
-async def create_RAG(files_store: RagUserFiles):
+async def create_RAG(files_store: UploadFile = File(...)):
+
     file_created =  client.files.create(
-  file=files_store["file_attach"], 
-  purpose=files_store["purpose"]
+  file= open(files_store ,'rb'),  
+  purpose="assistant"
 )
-    new_file = await rag_collection.create_user_files(file_created)
-    return new_file
+    # new_file = await rag_collection.create_user_files(file_created)
+    return file_created
 
 @router.post("/delete/files/{file_id}")
 async def create_RAG(file_id: str):
@@ -113,4 +123,4 @@ async def create_and_poll(rag_to_upload: RagUploadPoll):
   vector_store_id= rag_to_upload.vector_id,
   file_id= rag_to_upload.files
 )
-    pass
+    return file_uploaded.id

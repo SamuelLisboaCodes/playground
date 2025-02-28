@@ -7,11 +7,11 @@ from main import initialize_session_state, save_user_state
 import openai
 import json
 import pandas as pd
+import base64
 import pdfplumber
 
 
 API_URL = "http://127.0.0.1:8000/api/"  
-
 
 def change_thread(): 
     st.session_state.messages = []
@@ -26,6 +26,18 @@ def change_thread():
         st.session_state.messages.append(formatted_message)
     return st.session_state.messages
 
+def upload_file(file, thread_id):
+
+    
+    file_id_request = requests.post(API_URL + f'create/files', files={"files_store": file.getvalue()}) 
+    file_id_dict = json.loads(file_id_request.text)
+    file_id = file_id_dict['id']
+    vector_store_request = requests.post(API_URL + 'create/vector_store', json = {'name': file.name, 'file_ids': [file_id]})
+    vector_store_dict = json.loads(vector_store_request.text)
+    vector_store_id = vector_store_dict['id']
+    vector_to_thread_request = requests.post(API_URL + 'add_thread_file', json = {"thread_id":thread_id, "vector_store_id": vector_store_id})    
+
+    return file 
 
 def handle_logout_click():
     response = requests.post("http://127.0.0.1:8000/auth/logout", json={"email":st.session_state["email"]})
@@ -233,7 +245,8 @@ def openAI_page():
                 for message in st.session_state.messages:
                     with st.chat_message(message["role"]):
                         st.markdown(message["content"])
-    
+            uploaded_file = st.file_uploader('Upload File')
+           
             if prompt := st.chat_input("Enter your message"):
             # Display user message in chat message container
                 with chat_container:
@@ -244,10 +257,11 @@ def openAI_page():
                     print("oi")
                     response = requests.post(API_URL + f"assistants/{assistant_id}/update", json ={'instructions':system_message,'temperature':temperature, top_p:'top_p','model':model})
 
-                if "thread_id" not in st.session_state:
+                if "thread_id" not in st.session_state or st.session_state['thread_id'] == None:
                     response = requests.post("http://127.0.0.1:8000/api/threads",json={"email": st.session_state["email"]})
                     st.session_state['thread_id'] = json.loads(response.text)['id']
-            
+                if uploaded_file is not None:
+                    upload_file(uploaded_file, st.session_state['thread_id'])
                 response = requests.post(API_URL + f'threads/{st.session_state['thread_id']}/messages', json = {"role":"user", "content":prompt})
                 response = requests.post(API_URL + f'threads/{st.session_state['thread_id']}/{assistant_id}/run')
                 
