@@ -8,7 +8,7 @@ import time
 import os
 from api.storage import threads_collection, users_collection,runs_collection, assistants_collection,messages_collection
 
-
+load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -16,13 +16,29 @@ router = APIRouter()
 
 #  Criar uma nova thread
 @router.post("/threads", response_model=Thread)
-async def create_thread(email: str = Body(..., embed=True)):
+async def create_thread(user_email: str = Body(..., embed=True)):
     """Cria uma nova thread"""
     thread = client.beta.threads.create()
     new_thread = await threads_collection.create_thread(thread)
-    await users_collection.add_thread_to_user(email,thread.id)
+    await users_collection.add_thread_to_user(user_email,thread.id)
     
     return new_thread
+
+
+@router.post("/threads/{thread_id}/delete")
+async def delete_thread(thread_id: str, user_email: str = Body(..., embed=True)):
+    """deletar uma nova thread"""
+    try:
+        messages = await messages_collection.get_messages_by_thread(thread_id)
+        if messages:
+            for msg in messages:
+                await messages_collection.delete_message(msg.id)
+        
+        await users_collection.remove_thread_from_user(user_email,thread_id)
+        thread_deleted=await threads_collection.delete_thread(thread_id)
+        client.beta.threads.delete(thread_id=thread_id)
+    except:
+        return {}
 
 @router.get("/threads")
 async def list_threads(email:str):
@@ -89,9 +105,9 @@ async def run_thread(thread_id: str, assistant_id: str):
                     timestamp=datetime.now()
                 )
                 
-        await messages_collection.create_message(messages)
-        await threads_collection.update_thread_message(messages.id, thread_id)
-        await threads_collection.update_thread_runs(run.id, thread_id)
+                await messages_collection.create_message(messages)
+                await threads_collection.update_thread_message(messages.id, thread_id)
+                await threads_collection.update_thread_runs(run.id, thread_id)
         return messages
 
                 
