@@ -82,7 +82,7 @@ def query_openai_model(model, prompt, system_message, extracted_data, temperatur
 # Página de criação do assistente
 def create_assistant_page():
     st.title("Criar Novo Assistente")
-    requests.post("http://127.0.0.1:8000/api/threads",json={"email": st.session_state["email"]})
+
     name = st.text_input("Nome do Assistente")
     system_message = st.text_area("Instruções do Sistema")
     model = st.selectbox("Escolha o Modelo", ["gpt-4o","gpt-4o-mini","gpt-4.5-preview" ,"gpt-3.5-turbo"])
