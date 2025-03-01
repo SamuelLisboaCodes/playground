@@ -1,6 +1,6 @@
 import streamlit as st
 from dotenv import load_dotenv
-import openai
+from openai import OpenAI
 import requests
 import os
 from main import initialize_session_state, save_user_state
@@ -12,7 +12,7 @@ import pdfplumber
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-client = openai.OpenAI()
+client =OpenAI(api_key= OPENAI_API_KEY)
 
 UPLOAD_URL = "https://api.openai.com/v1/files"
 API_URL = "http://127.0.0.1:8000/api/"  
@@ -239,17 +239,20 @@ def openAI_page():
             response = requests.get(API_URL + f'threads?email={st.session_state['email']}')
             threads_list = json.loads(response.text)
            
-            col1, col2 = st.columns([3, 1])
+            select, button = st.columns([3, 1])
             
-            with col1:
+            with select:
                 st.session_state['thread_id'] = st.selectbox(f"threads", options= threads_list, key='thread-select')
             
-            with col2:
+            with button:
                 if st.button("❌ Excluir", key=f"del"):
-                    response = requests.post(API_URL + f'threads/{st.session_state['thread_id']}', json={'user_email':st.session_state['email']})
+                    response = requests.post(API_URL + f'threads/{st.session_state['thread_id']}/delete', json={'user_email':st.session_state['email']})
                     st.session_state['thread_id'] = None
                     st.rerun()
-
+                if st.button("add", key=f"add"):
+                    response = requests.post(API_URL + f'threads', json={'user_email':st.session_state['email']})
+                    st.session_state['thread_id'] = json.loads(response.text)['id']
+                    st.rerun()
             if "thread_id"  in st.session_state: 
                 try:
                     change_thread()
