@@ -14,7 +14,7 @@ load_dotenv()
 
 
 mongodb_uri = os.getenv("MONGODB_URI")
-mongo_db_client = AsyncIOMotorClient(mongodb_uri)["test_playground_DB"]
+mongo_db_client = AsyncIOMotorClient(mongodb_uri)["playground_DB"]
 
 users_collection = MongoUserRepository(mongo_db_client)
 assistants_collection = MongoAssistantRepository(mongo_db_client)

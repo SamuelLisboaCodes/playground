@@ -52,7 +52,7 @@ async def retrieve_assistant(assistant_id: str):
     try:
         # Se for uma requisição assíncrona, precisa de await
         assistant_info =  client.beta.assistants.retrieve( assistant_id)
-
+        print(assistant_info)
         return Assistant(
             id=assistant_info.id,
             name=assistant_info.name,
@@ -61,12 +61,13 @@ async def retrieve_assistant(assistant_id: str):
             temperature=assistant_info.temperature,
             top_p=assistant_info.top_p
         )
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao buscar assistente: {str(e)}")
 
 
 @router.post("/assistants/{assistant_id}/update")
-async def update_assistant(assistant_id: str, instructions: str = Body(..., embed=True), temperature: float = Body(..., embed=True), top_p: float = Body(..., embed=True), model: str= Body(..., embed=True), tools_resources: list = Body(...,embed=True) ):
+async def update_assistant(assistant_id: str, instructions: str = Body(..., embed=True), temperature: float = Body(..., embed=True), top_p: float = Body(..., embed=True), model: str= Body(..., embed=True)):
     update_assistant = client.beta.assistants.update(assistant_id = assistant_id,
                                      instructions = instructions,
                                      model=model,
