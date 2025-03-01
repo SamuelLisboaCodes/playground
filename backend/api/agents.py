@@ -125,6 +125,6 @@ async def create_RAG(file_id: str):
 async def create_and_poll(rag_to_upload: RagUploadPoll):
     file_uploaded = client.beta.vector_stores.files.create_and_poll(
   vector_store_id= rag_to_upload.vector_id,
-  file_id= rag_to_upload.files
+  file_ids= rag_to_upload.files
 )
     return file_uploaded.id

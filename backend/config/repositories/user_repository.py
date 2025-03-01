@@ -86,11 +86,11 @@ class MongoUserRepository():
             print(f"Erro ao remover assistente do usuário: {e}")
             return None
         
-    async def remove_thread_from_user(self, user_id: str, thread_id: str):
+    async def remove_thread_from_user(self, user_email: str, thread_id: str):
         """Remove um assistente da lista de assistentes do usuário."""
         try:
             result = await self.collection.update_one(
-                {"id": user_id},
+                {"email": user_email},
                 {"$pull": {"threads": thread_id}}  # Remove a referência do assistente
             )
             return result.modified_count > 0

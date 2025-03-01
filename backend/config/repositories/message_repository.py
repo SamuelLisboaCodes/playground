@@ -54,11 +54,7 @@ class MongoMessageRepository:
     async def delete_message(self, message_id: str):
         #Remove uma mensagem e também a desvincula da thread correspondente.
         try:
-            # Obtém a mensagem para saber a qual thread pertence
-            message = await self.collection.find_one({"id": message_id})
-            if not message:
-                return False  # Se a mensagem não existe, retorna False
-
+            # Obtém a mensagem para saber a qual thread pertence  # Se a mensagem não existe, retorna Fals
             # Remove a mensagem da coleção de mensagens
             result = await self.collection.delete_one({"id": message_id})
             
@@ -85,7 +81,7 @@ class MongoMessageRepository:
         return Message(
             id=obj["id"],
             thread_id=obj["thread_id"],
-            assistant_id=obj["assistant_id"],
+            assistant_id=obj.get("assistant_id", None),
             role=obj["role"],
             content=obj["content"],
             timestamp=obj["timestamp"]
