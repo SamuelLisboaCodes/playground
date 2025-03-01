@@ -121,7 +121,7 @@ async def list_messages(thread_id: str):
 
     messages_list =  await messages_collection.get_messages_by_thread(thread_id)
     
-    return messages_list
+    # return messages_list
 
 
 
