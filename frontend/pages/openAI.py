@@ -11,8 +11,8 @@ import base64
 import pdfplumber
 
 load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-client =OpenAI(api_key= OPENAI_API_KEY)
+client =OpenAI(api_key= os.getenv('OPENAI_API_KEY'))
+
 
 UPLOAD_URL = "https://api.openai.com/v1/files"
 API_URL = "http://127.0.0.1:8000/api/"  
@@ -115,10 +115,6 @@ def create_assistant_page():
 
 def openAI_page():
 # Carregar variáveis de ambiente do arquivo .env
-    
-    load_dotenv()
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-
     initialize_session_state()
 
     # Adicionar o botão de logout no canto superior direito
@@ -205,6 +201,8 @@ def openAI_page():
             st.session_state.messages = []  
         if "file_ids" not in st.session_state:
             st.session_state["file_ids"] = {}
+        if "assistant_selected" not in st.session_state:
+            st.session_state["assistant_selected"] = None
         col1, col2 = st.columns([2, 3])
 
         with col1:
@@ -214,8 +212,8 @@ def openAI_page():
             print(id_assistentes)
             if id_assistentes:
                 assistants_list = {i:requests.get( API_URL + 'assistants/' + ass + '/retrieve') for i, ass in enumerate(id_assistentes)}
-                
-                id_to_name = lambda id_procurado: next((a.json()["name"] for a in assistants_list.values() if a.json()['id'] == id_procurado),  "Não encontrado")
+                print(assistants_list)
+                id_to_name = lambda id_procurado: next((a.json()["name"] for a in assistants_list.values() if a.json()['id'] and a.json()['id']== id_procurado),  "Não encontrado")
 
                 assistant_id = st.selectbox("Assistente", id_assistentes, format_func = id_to_name, key="assistant_select")
                 assistant = requests.get( API_URL + 'assistants/' + assistant_id + '/retrieve')
@@ -234,24 +232,21 @@ def openAI_page():
                     st.rerun()
 
         with col2:
-            
-
             response = requests.get(API_URL + f'threads?email={st.session_state['email']}')
             threads_list = json.loads(response.text)
-           
+
             select, button = st.columns([3, 1])
             
             with select:
-                st.session_state['thread_id'] = st.selectbox(f"threads", options= threads_list, key='thread-select')
-            
+                    st.session_state['thread_id'] = st.selectbox(f"threads", options= threads_list, key='thread-select')
+
             with button:
                 if st.button("❌ Excluir", key=f"del"):
                     response = requests.post(API_URL + f'threads/{st.session_state['thread_id']}/delete', json={'user_email':st.session_state['email']})
-                    st.session_state['thread_id'] = None
                     st.rerun()
                 if st.button("add", key=f"add"):
                     response = requests.post(API_URL + f'threads', json={'user_email':st.session_state['email']})
-                    st.session_state['thread_id'] = json.loads(response.text)['id']
+                    st.session_state['thread_id']=json.loads(response.text)['id']
                     st.rerun()
             if "thread_id"  in st.session_state: 
                 try:
@@ -272,7 +267,7 @@ def openAI_page():
                 if uploaded_file is not None:
                     with st.spinner("Enviando arquivo para OpenAI..."):
                         files = {"file": (uploaded_file.name, uploaded_file.getvalue())}
-                        headers = {"Authorization": f"Bearer {OPENAI_API_KEY}"}
+                        headers = {"Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}"}
                         data = {"purpose": "assistants"}  # Pode ser "answers", "classifications" ou "fine-tune"
                         response = requests.post(UPLOAD_URL, headers=headers, files=files, data=data)
                         
@@ -288,7 +283,7 @@ def openAI_page():
                 st.subheader("📂 Últimos 5 arquivos enviados para OpenAI")
 
                 with st.spinner("Buscando arquivos..."):
-                    headers = {"Authorization": f"Bearer {OPENAI_API_KEY}"}
+                    headers = {"Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}"}
                     response = requests.get(LIST_URL, headers=headers)
 
                 if response.status_code == 200:
@@ -329,23 +324,25 @@ def openAI_page():
                     
                     response = requests.post(API_URL + f"assistants/{assistant_id}/update", json ={'instructions':system_message,'temperature':temperature, top_p:'top_p','model':model})
 
+
                 if "thread_id" not in st.session_state or st.session_state['thread_id'] == None:
-                    response = requests.post("http://127.0.0.1:8000/api/threads",json={"email": st.session_state["email"]})
+                    response = requests.post("http://127.0.0.1:8000/api/threads",json={"user_email": st.session_state["email"]})
                     st.session_state['thread_id'] = json.loads(response.text)['id']
-                response = requests.post(API_URL + f'threads/{st.session_state['thread_id']}/messages', json = {"role":"user", "content":prompt})
-                response = requests.post(API_URL + f'threads/{st.session_state['thread_id']}/{assistant_id}/run')
+                response_1 = requests.post(API_URL + f'threads/{st.session_state['thread_id']}/messages', json = {"role":"user", "content":prompt})
+                response_run = requests.post(API_URL + f'threads/{st.session_state['thread_id']}/{assistant_id}/run')
                 if uploaded_file is not None: 
                     
                     vector_created = client.beta.vector_stores.create(name= file_info['filename'], file_ids=[file_info['id']])
                     my_updated_thread = client.beta.threads.update(st.session_state['thread_id'], tool_resources = {"file_search": {'vector_store_ids':[ vector_created.id]} } )
-                chat_response = json.loads(response.text)
-                response = chat_response['content']
+                chat_response = json.loads(response_run.text)
+                response_assistant = chat_response['content']
+                
                 # Display assistant response in chat message container
                 with chat_container:
-                    st.chat_message(assistant_attrs['name']).markdown(response)
+                    st.chat_message(assistant_attrs['name']).markdown(response_assistant)
                 # Add assistant response to chat history
 
-                st.session_state.messages.append({"role": assistant_attrs['name'], "content": response})
+                st.session_state.messages.append({"role": assistant_attrs['name'], "content": response_assistant})
             # text_uploaded_file = st.file_uploader("Adicione um arquivo ao seu prompt")
     elif page == "Criar Assistente":
         create_assistant_page()

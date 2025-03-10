@@ -11,15 +11,13 @@ from api.storage import users_collection, assistants_collection, rag_collection
 
 
 load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key= OPENAI_API_KEY)
+client =OpenAI(api_key= os.getenv('OPENAI_API_KEY'))
 
 router = APIRouter()
 
 @router.post("/assistants", response_model=Assistant)
 async def create_assistant(request: Assistant, user_email: str = Body(..., embed=True)):
     """Cria um novo assistente na API da OpenAI"""
-    print(request)
     assistant = client.beta.assistants.create(
         name=request.name,
         instructions=request.instructions,
@@ -41,7 +39,7 @@ async def create_assistant(request: Assistant, user_email: str = Body(..., embed
 @router.get("/assistants")
 async def list_assistants(email: str):
     """Lista todos os assistentes criados"""
-    # assistants = client.beta.assistants.list()
+    #assistants = client.beta.assistants.list()
     # return [{"id": a.id, "name": a.name, "model": a.model} for a in assistants.data]    
     assistants_ids = await users_collection.get_user_assistants(email)
     return assistants_ids.assistants

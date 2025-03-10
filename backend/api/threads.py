@@ -9,9 +9,8 @@ import os
 from api.storage import threads_collection, users_collection,runs_collection, assistants_collection,messages_collection
 
 load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+client =OpenAI(api_key= os.getenv('OPENAI_API_KEY'))
 router = APIRouter()
 
 #  Criar uma nova thread
@@ -37,6 +36,7 @@ async def delete_thread(thread_id: str, user_email: str = Body(..., embed=True))
         await users_collection.remove_thread_from_user(user_email,thread_id)
         thread_deleted=await threads_collection.delete_thread(thread_id)
         client.beta.threads.delete(thread_id=thread_id)
+        return {"status_code": 200}
     except:
         return {}
 
@@ -81,14 +81,14 @@ async def run_thread(thread_id: str, assistant_id: str):
             run_status = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)
 
             if run_status.status == "completed":
-                break
+                await runs_collection.update_run_status(run.id,run_status.status)
+                
             elif run_status.status in ["failed", "cancelled"]:
                 raise HTTPException(status_code=400, detail=f"Execução falhou: {run_status.status}")
 
             time.sleep(2)  # Espera 2 segundos antes de checar novamente
 
         #  Buscar a resposta do assistente
-        await runs_collection.update_run_status(run.id,run_status.status)
         messages = client.beta.threads.messages.list(thread_id=thread_id)
 
         for msg in messages.data:  # Pegar a última resposta do assistente
@@ -96,6 +96,7 @@ async def run_thread(thread_id: str, assistant_id: str):
                 #  Extrair corretamente os blocos de texto
                 content_text = " ".join(
                                 block.text.value for block in msg.content)
+                
                 messages = Message(
                     id=msg.id,
                     thread_id=thread_id,
@@ -104,7 +105,7 @@ async def run_thread(thread_id: str, assistant_id: str):
                     content=content_text.strip(), 
                     timestamp=datetime.now()
                 )
-                
+                print(messages)
                 await messages_collection.create_message(messages)
                 await threads_collection.update_thread_message(messages.id, thread_id)
                 await threads_collection.update_thread_runs(run.id, thread_id)

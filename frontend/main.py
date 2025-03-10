@@ -2,6 +2,8 @@ import streamlit as st
 import time
 from pages import openAI, login
 
+from pathlib import Path
+print(Path.cwd())
 @st.cache_data
 def get_cached_user():
     return {"logged_in": False, "email": "", "auth_token": None}
